@@ -8,6 +8,7 @@ const statusVariants: Record<LeadStatus, 'default' | 'secondary' | 'success' | '
   ready_to_send: 'outline',
   new: 'secondary',
   contacted: 'default',
+  no_reply: 'destructive',
   replied: 'warning',
   meeting: 'default',
   won: 'success',

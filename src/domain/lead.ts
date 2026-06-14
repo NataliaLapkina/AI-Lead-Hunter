@@ -3,6 +3,7 @@ export type LeadStatus =
   | 'ready_to_send'
   | 'new'
   | 'contacted'
+  | 'no_reply'
   | 'replied'
   | 'meeting'
   | 'won'

@@ -16,6 +16,7 @@ import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
 import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
 import { LeadPotentialPanel } from '@/components/leads/LeadPotentialPanel'
+import { LeadNextActionPanel } from '@/components/leads/LeadNextActionPanel'
 import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -194,6 +195,8 @@ export function LeadDetailView({
           </div>
 
           <LeadPotentialPanel lead={lead} />
+
+          <LeadNextActionPanel lead={lead} />
 
           <div className="grid gap-3 text-sm">
             {lead.city && (

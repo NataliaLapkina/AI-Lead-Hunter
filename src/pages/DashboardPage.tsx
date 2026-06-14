@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Users } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { StatsCards } from '@/components/analytics/StatsCards'
-import { QuickActions, RecentLeads } from '@/components/dashboard/DashboardWidgets'
+import { QuickActions, RecentLeads, ActionRequired } from '@/components/dashboard/DashboardWidgets'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { LeadDetailSheet } from '@/components/leads/LeadDetailSheet'
 import { LeadForm } from '@/components/leads/LeadForm'
@@ -57,6 +57,7 @@ export function DashboardPage() {
         ) : (
           <div className="space-y-6">
             <StatsCards analytics={analytics} interactive />
+            <ActionRequired leads={leads} />
             <div className="grid gap-6 lg:grid-cols-2">
               <QuickActions onAddLead={() => openLeadForm()} />
               <RecentLeads leads={leads} onLeadClick={openLeadSheet} />
