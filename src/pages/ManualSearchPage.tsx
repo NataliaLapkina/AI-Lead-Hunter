@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
 import { Search } from 'lucide-react'
-import { AppShell } from '@/components/layout/AppShell'
 import { NicheSearchForm } from '@/components/search/NicheSearchForm'
 import { NicheSuggestions } from '@/components/search/NicheSuggestions'
 import { QueryGenerator } from '@/components/search/QueryGenerator'
@@ -14,7 +13,7 @@ import { ru } from '@/i18n/ru'
 import { toast } from 'sonner'
 import type { CreateLeadInput, SearchQuery, LeadSource } from '@/domain/lead'
 
-export function SearchPage() {
+export function ManualSearchPage() {
   const { settings, fetchSettings } = useSettingsStore()
   const { queries, isGenerating, generate, loadHistory } = useQueryGenerator()
   const { createLead, checkDuplicates } = useLeads()
@@ -56,28 +55,26 @@ export function SearchPage() {
 
   return (
     <>
-      <AppShell title={ru.search.title} subtitle={ru.search.subtitle}>
-        <div className="mx-auto max-w-3xl space-y-8">
-          <NicheSuggestions
-            presets={getSearchNichePresets(settings?.nichePresets ?? [])}
-            onSelect={handlePresetSelect}
-          />
+      <div className="mx-auto max-w-3xl space-y-8">
+        <NicheSuggestions
+          presets={getSearchNichePresets(settings?.nichePresets ?? [])}
+          onSelect={handlePresetSelect}
+        />
 
-          <NicheSearchForm onGenerate={handleGenerate} isGenerating={isGenerating} />
+        <NicheSearchForm onGenerate={handleGenerate} isGenerating={isGenerating} />
 
-          <div ref={formRef}>
-            {queries.length > 0 ? (
-              <QueryGenerator queries={queries} onAddLead={handleAddLeadFromQuery} />
-            ) : (
-              <EmptyState
-                icon={<Search className="h-10 w-10" />}
-                title={ru.search.emptyTitle}
-                description={ru.search.emptyDescription}
-              />
-            )}
-          </div>
+        <div ref={formRef}>
+          {queries.length > 0 ? (
+            <QueryGenerator queries={queries} onAddLead={handleAddLeadFromQuery} />
+          ) : (
+            <EmptyState
+              icon={<Search className="h-10 w-10" />}
+              title={ru.search.emptyTitle}
+              description={ru.search.emptyDescription}
+            />
+          )}
         </div>
-      </AppShell>
+      </div>
 
       <LeadForm
         open={formOpen}

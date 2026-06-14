@@ -1,7 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { SearchPage } from '@/pages/SearchPage'
+import { SearchLayout } from '@/components/search/SearchLayout'
+import { ManualSearchPage } from '@/pages/ManualSearchPage'
+import { AutoSearchPage } from '@/pages/AutoSearchPage'
 import { LeadsPage } from '@/pages/LeadsPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
@@ -13,7 +15,14 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'search', element: <SearchPage /> },
+      {
+        path: 'search',
+        element: <SearchLayout />,
+        children: [
+          { index: true, element: <ManualSearchPage /> },
+          { path: 'auto', element: <AutoSearchPage /> },
+        ],
+      },
       { path: 'leads', element: <LeadsPage /> },
       { path: 'leads/:id', element: <LeadDetailPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },

@@ -1,4 +1,6 @@
 export type LeadStatus =
+  | 'draft'
+  | 'ready_to_send'
   | 'new'
   | 'contacted'
   | 'replied'
@@ -7,11 +9,10 @@ export type LeadStatus =
   | 'lost'
   | 'archived'
 
+export type AutoSearchSource = 'avito' | 'yandex_maps' | '2gis' | 'vk'
+
 export type LeadSource =
-  | 'avito'
-  | 'yandex_maps'
-  | '2gis'
-  | 'vk'
+  | AutoSearchSource
   | 'telegram'
   | 'company_site'
   | 'other'
@@ -172,6 +173,7 @@ export interface CreateLeadInput {
   tags: string[]
   opportunities?: ImprovementOpportunity[]
   status?: LeadStatus
+  generatedMessage?: string
 }
 
 export interface UpdateLeadInput extends Partial<CreateLeadInput> {
@@ -185,4 +187,27 @@ export interface ImportResult {
   imported: number
   skipped: number
   errors: string[]
+}
+
+/** Черновик лида в режиме автопоиска (до сохранения в базу) */
+export interface AutoSearchDraftLead {
+  id: string
+  selected: boolean
+  name: string
+  niche: string
+  city: string
+  source: LeadSource
+  website?: string
+  contacts: LeadContacts
+  opportunities: ImprovementOpportunity[]
+  generatedMessage: string
+  notes: string
+}
+
+export interface AutoSearchParams {
+  niche: string
+  city: string
+  source: AutoSearchSource
+  count: number
+  linksText?: string
 }

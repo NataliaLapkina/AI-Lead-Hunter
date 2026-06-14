@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const statusVariants: Record<LeadStatus, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'muted' | 'outline'> = {
+  draft: 'muted',
+  ready_to_send: 'outline',
   new: 'secondary',
   contacted: 'default',
   replied: 'warning',

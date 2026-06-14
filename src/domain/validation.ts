@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { LEAD_SOURCES, LEAD_STATUSES, IMPROVEMENT_OPPORTUNITIES } from '@/lib/constants'
+import { AUTO_SEARCH_SOURCES, LEAD_SOURCES, LEAD_STATUSES, IMPROVEMENT_OPPORTUNITIES } from '@/lib/constants'
 
 export const leadContactsSchema = z.object({
   emails: z.array(z.string().email('Некорректный email')).default([]),
@@ -39,3 +39,13 @@ export const searchFormSchema = z.object({
 })
 
 export type SearchFormData = z.infer<typeof searchFormSchema>
+
+export const autoSearchFormSchema = z.object({
+  niche: z.string().min(1, 'Укажите нишу'),
+  city: z.string().default(''),
+  source: z.enum(AUTO_SEARCH_SOURCES),
+  count: z.coerce.number().int().min(1, 'Минимум 1').max(50, 'Максимум 50'),
+  linksText: z.string().default(''),
+})
+
+export type AutoSearchFormData = z.infer<typeof autoSearchFormSchema>

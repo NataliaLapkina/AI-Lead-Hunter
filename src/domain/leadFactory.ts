@@ -29,6 +29,7 @@ export function createLeadEntity(input: CreateLeadInput): Lead {
     website: input.website || undefined,
     contacts: input.contacts,
     notes: input.notes,
+    generatedMessage: input.generatedMessage,
     status: input.status ?? 'new',
     tags: input.tags,
     opportunities: input.opportunities ?? [],
