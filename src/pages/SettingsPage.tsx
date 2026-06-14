@@ -26,12 +26,13 @@ import { exportLeadsToJson, getJsonFilename, parseLeadsFromJson } from '@/featur
 import { downloadBlob } from '@/lib/utils'
 import { ru, getNicheLabel } from '@/i18n/ru'
 import { toast } from 'sonner'
+import type { AppProfile } from '@/domain/lead'
+import { createDefaultAppProfile } from '@/lib/senderProfile'
 
 export function SettingsPage() {
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
   const { fetchLeads } = useLeadStore()
-  const [name, setName] = useState('')
-  const [businessType, setBusinessType] = useState('')
+  const [profile, setProfile] = useState<AppProfile>(createDefaultAppProfile())
   const [newNiche, setNewNiche] = useState('')
   const [isAddingNiche, setIsAddingNiche] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
@@ -43,16 +44,19 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      setName(settings.profile.name)
-      setBusinessType(settings.profile.businessType)
+      setProfile(settings.profile)
     }
   }, [settings])
+
+  const updateProfileField = <K extends keyof AppProfile>(key: K, value: AppProfile[K]) => {
+    setProfile((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleSaveProfile = async () => {
     if (!settings) return
     await updateSettings({
       ...settings,
-      profile: { name, businessType },
+      profile,
     })
     toast.success(ru.settings.saved)
   }
@@ -140,22 +144,93 @@ export function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{ru.settings.profile}</CardTitle>
+              <CardDescription>{ru.settings.profileDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="profile-name">{ru.settings.profileName}</Label>
                 <Input
                   id="profile-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={profile.name}
+                  onChange={(e) => updateProfileField('name', e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-specialization">{ru.settings.profileSpecialization}</Label>
+                <Input
+                  id="profile-specialization"
+                  value={profile.specialization}
+                  onChange={(e) => updateProfileField('specialization', e.target.value)}
+                  placeholder={ru.settings.profileSpecializationPlaceholder}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-phone">{ru.settings.profilePhone}</Label>
+                  <Input
+                    id="profile-phone"
+                    value={profile.phone}
+                    onChange={(e) => updateProfileField('phone', e.target.value)}
+                    placeholder="+7 ..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-whatsapp">{ru.settings.profileWhatsApp}</Label>
+                  <Input
+                    id="profile-whatsapp"
+                    value={profile.whatsapp}
+                    onChange={(e) => updateProfileField('whatsapp', e.target.value)}
+                    placeholder="+7 ... или @username"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-telegram">{ru.settings.profileTelegram}</Label>
+                  <Input
+                    id="profile-telegram"
+                    value={profile.telegram}
+                    onChange={(e) => updateProfileField('telegram', e.target.value)}
+                    placeholder="@username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-vk">{ru.settings.profileVk}</Label>
+                  <Input
+                    id="profile-vk"
+                    value={profile.vk}
+                    onChange={(e) => updateProfileField('vk', e.target.value)}
+                    placeholder="vk.com/..."
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-email">{ru.settings.profileEmail}</Label>
+                  <Input
+                    id="profile-email"
+                    type="email"
+                    value={profile.email}
+                    onChange={(e) => updateProfileField('email', e.target.value)}
+                    placeholder="email@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-website">{ru.settings.profileWebsite}</Label>
+                  <Input
+                    id="profile-website"
+                    value={profile.website}
+                    onChange={(e) => updateProfileField('website', e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-business">{ru.settings.profileBusiness}</Label>
                 <Input
                   id="profile-business"
-                  value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value)}
+                  value={profile.businessType}
+                  onChange={(e) => updateProfileField('businessType', e.target.value)}
                   placeholder={ru.settings.profileBusinessPlaceholder}
                 />
               </div>

@@ -2,6 +2,7 @@ import type { AppSettings, Lead } from '@/domain/lead'
 import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
 import { resolveLeadSource } from './leadSources'
 import { normalizeNicheName } from './nicheDisplay'
+import { createDefaultAppProfile, normalizeAppProfile } from './senderProfile'
 import {
   buildInitialNichePresets,
   createDefaultNichePresets,
@@ -120,6 +121,16 @@ function migrateSettingsNichesV7(): void {
   })
 }
 
+function migrateSettingsProfileV9(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    profile: normalizeAppProfile(settings.profile, createDefaultAppProfile()),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -146,6 +157,10 @@ export function runMigrations(): void {
   if (current < 7) {
     migrateLeadsV7()
     migrateSettingsNichesV7()
+  }
+
+  if (current < 9) {
+    migrateSettingsProfileV9()
   }
 
   if (current < SCHEMA_VERSION) {

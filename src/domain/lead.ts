@@ -127,6 +127,13 @@ export interface AnalyticsSummary {
 export interface AppProfile {
   name: string
   businessType: string
+  specialization: string
+  phone: string
+  whatsapp: string
+  telegram: string
+  vk: string
+  email: string
+  website: string
 }
 
 export interface AppIntegrations {

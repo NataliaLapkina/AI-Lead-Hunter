@@ -13,6 +13,8 @@ import { ImprovementBadges } from '@/components/leads/ImprovementChecklist'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
+import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
+import { getSenderProfile } from '@/lib/senderProfile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -71,7 +73,8 @@ export function LeadDetailView({
 
   const apiKey = settings?.integrations.openaiApiKey
 
-  const fallbackMessage = buildOutreachMessage(lead)
+  const senderProfile = getSenderProfile(settings?.profile)
+  const fallbackMessage = buildOutreachMessage(lead, senderProfile)
   const message = lead.generatedMessage || fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
 
@@ -87,7 +90,7 @@ export function LeadDetailView({
     }
     setIsGenerating(true)
     try {
-      const generated = await generateAIMessage(apiKey!, { lead })
+      const generated = await generateAIMessage(apiKey!, { lead, senderProfile: settings?.profile })
       await onUpdateLead(lead.id, { generatedMessage: generated })
       toast.success(ru.leads.messageGenerated)
     } catch (e) {
@@ -321,6 +324,10 @@ export function LeadDetailView({
             <p className="text-sm font-medium">{ru.leads.copyMessage}</p>
             <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
               {message}
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">{ru.leads.sendVia}</p>
+              <LeadOutreachActions lead={lead} message={message} />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleCopyMessage} className="gap-2">

@@ -30,6 +30,13 @@ export type UpdateLeadFormData = z.infer<typeof updateLeadSchema>
 export const profileSchema = z.object({
   name: z.string().min(1, 'Укажите имя'),
   businessType: z.string().default(''),
+  specialization: z.string().default(''),
+  phone: z.string().default(''),
+  whatsapp: z.string().default(''),
+  telegram: z.string().default(''),
+  vk: z.string().default(''),
+  email: z.string().default(''),
+  website: z.string().default(''),
 })
 
 export const searchFormSchema = z.object({

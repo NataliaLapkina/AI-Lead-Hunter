@@ -1,17 +1,17 @@
 import type { ImprovementOpportunity, Lead } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
+import {
+  DEFAULT_SENDER_PROFILE,
+  OUTREACH_SENDER,
+  buildMessageSignature,
+  getSenderProfile,
+  type SenderProfile,
+} from '@/lib/senderProfile'
+import type { AppProfile } from '@/domain/lead'
 
-export const OUTREACH_SENDER = {
-  name: 'Наталья Лапкина',
-  specialization: 'созданием сайтов, автоматизацией и AI-решениями для бизнеса',
-  services: [
-    'создание сайтов',
-    'автоматизация бизнеса',
-    'AI-инструменты',
-    'лидогенерация',
-  ],
-} as const
+export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature }
+export type { SenderProfile }
 
 function getOpportunityPitch(key: ImprovementOpportunity): string {
   return ru.opportunityPitches[key]
@@ -55,19 +55,28 @@ function formatCompanyContext(lead: Lead): string {
   return 'вашу компанию'
 }
 
-export function buildOutreachMessage(lead: Lead): string {
+export function buildOutreachMessage(
+  lead: Lead,
+  senderInput?: Partial<AppProfile> | SenderProfile,
+): string {
+  const sender = getSenderProfile(
+    senderInput && 'phone' in senderInput ? senderInput : (senderInput as Partial<AppProfile> | undefined),
+  )
+
   const bullets = collectOutreachBullets(lead)
   const bulletBlock = bullets.map((b) => `• ${b}`).join('\n')
   const companyContext = formatCompanyContext(lead)
+  const signature = buildMessageSignature(sender)
+  const name = sender.name.trim() || DEFAULT_SENDER_PROFILE.name
+  const specialization = sender.specialization.trim() || DEFAULT_SENDER_PROFILE.specialization
 
   return `Здравствуйте!
-Меня зовут ${OUTREACH_SENDER.name}.
-Я занимаюсь ${OUTREACH_SENDER.specialization}.
+Меня зовут ${name}.
+Я занимаюсь ${specialization}.
 Изучила ${companyContext} и заметила несколько точек роста:
 ${bulletBlock}
 Эти моменты могут снижать количество обращений и доверие клиентов.
 Могу показать конкретные варианты улучшений и примеры решений.
 Если интересно — подготовлю краткий аудит без обязательств.
-С уважением,
-${OUTREACH_SENDER.name}`
+${signature}`
 }

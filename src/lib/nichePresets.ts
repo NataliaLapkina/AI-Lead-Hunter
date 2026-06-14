@@ -1,6 +1,7 @@
 import type { AppSettings, NichePreset } from '@/domain/lead'
 import { DEFAULT_NICHE_PRESETS, USER_NICHE_PRESETS } from './constants'
 import { normalizeNicheName } from './nicheDisplay'
+import { normalizeAppProfile } from './senderProfile'
 
 const DEFAULT_NICHE_IDS = new Set<string>(DEFAULT_NICHE_PRESETS.map((n) => n.id))
 
@@ -72,10 +73,7 @@ export function normalizeAppSettings(
   return {
     ...fallback,
     ...raw,
-    profile: {
-      name: raw.profile?.name ?? fallback.profile.name,
-      businessType: raw.profile?.businessType ?? fallback.profile.businessType,
-    },
+    profile: normalizeAppProfile(raw.profile, fallback.profile),
     integrations: {
       ...fallback.integrations,
       ...raw.integrations,

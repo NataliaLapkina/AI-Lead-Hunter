@@ -3,12 +3,13 @@ import type { ISettingsRepository } from '@/repositories/interfaces/ISettingsRep
 import { STORAGE_KEYS } from '@/lib/constants'
 import { buildInitialNichePresets, normalizeAppSettings } from '@/lib/nichePresets'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
+import { createDefaultAppProfile } from '@/lib/senderProfile'
 import { getStorageItem, setStorageItem } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 
 function createDefaultSettings(): AppSettings {
   return {
-    profile: { name: '', businessType: '' },
+    profile: createDefaultAppProfile(),
     nichePresets: buildInitialNichePresets(),
     plan: 'free',
     integrations: { googleSheetsConnected: false },
