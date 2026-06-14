@@ -21,6 +21,86 @@ export function isSourcePlatformUrl(url: string): boolean {
   )
 }
 
+export function isVkUrl(url: string): boolean {
+  const lower = url.toLowerCase()
+  return lower.includes('vk.com') || lower.includes('vk.ru') || lower.includes('vk.me')
+}
+
+export function looksLikeUrl(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (/^https?:\/\//i.test(trimmed)) return true
+  if (trimmed.includes(' ')) return false
+  return /^[\w.-]+\.(ru|com|org|net|io|me)(\/|$)/i.test(trimmed)
+}
+
+export function detectSourceFromUrl(url: string, fallback: LeadSource): LeadSource {
+  const lower = url.toLowerCase()
+  if (lower.includes('avito.ru') || lower.includes('avito.com')) return 'avito'
+  if (lower.includes('yandex.') && lower.includes('/maps')) return 'yandex_maps'
+  if (lower.includes('2gis.ru') || lower.includes('2gis.com')) return '2gis'
+  if (isVkUrl(url)) return 'vk'
+  return fallback
+}
+
+export function isLegacyItemLeadName(name: string): boolean {
+  return /^Item\s+\d+/i.test(name.trim())
+}
+
+export function isLegacyYandexMapsLeadName(name: string): boolean {
+  const trimmed = name.trim()
+  return trimmed.includes('Яндекс Карты —') || trimmed.includes('Яндекс Карты -')
+}
+
+export function fixLegacyLeadName(
+  lead: Pick<Lead, 'name' | 'niche' | 'source' | 'sourceUrl' | 'website' | 'contacts'>,
+): Pick<Lead, 'name' | 'sourceUrl' | 'website' | 'contacts' | 'source'> {
+  let name = lead.name.trim()
+  let sourceUrl = lead.sourceUrl?.trim()
+  let website = lead.website?.trim()
+  const contacts = { ...lead.contacts }
+  let source = lead.source
+  const niche = lead.niche || 'Компания'
+
+  if (looksLikeUrl(name)) {
+    const url = normalizeExternalUrl(name)
+
+    if (isVkUrl(url)) {
+      sourceUrl = sourceUrl || url
+      contacts.vk = contacts.vk?.trim() || url
+      source = source === 'other' || source === 'company_site' ? 'vk' : source
+      name = buildFallbackLeadName('vk', niche)
+      return { name, sourceUrl, website, contacts, source }
+    }
+
+    if (isSourcePlatformUrl(url)) {
+      const detected = detectSourceFromUrl(url, source)
+      sourceUrl = sourceUrl || url
+      source = detected
+      name = buildFallbackLeadName(detected, niche)
+      return { name, sourceUrl, website, contacts, source }
+    }
+  }
+
+  const sourceLink = sourceUrl || website
+  const isAvitoLead =
+    source === 'avito' || Boolean(sourceLink && sourceLink.toLowerCase().includes('avito'))
+
+  if (isLegacyItemLeadName(name) && isAvitoLead) {
+    source = 'avito'
+    name = buildFallbackLeadName('avito', niche)
+    return { name, sourceUrl, website, contacts, source }
+  }
+
+  if (isLegacyYandexMapsLeadName(name)) {
+    source = source === 'other' || source === 'company_site' ? 'yandex_maps' : source
+    name = buildFallbackLeadName('yandex_maps', niche)
+    return { name, sourceUrl, website, contacts, source }
+  }
+
+  return { name, sourceUrl, website, contacts, source }
+}
+
 export function buildFallbackLeadName(source: LeadSource, niche: string): string {
   const label = normalizeNicheName(niche)
 

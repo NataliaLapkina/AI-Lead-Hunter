@@ -9,7 +9,7 @@ import type {
 import { buildOutreachMessage } from '@/features/leads/outreachMessage'
 import { suggestOpportunitiesFromLead } from '@/features/leads/improvements'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
-import { buildFallbackLeadName, normalizeExternalUrl } from '@/lib/leadLinks'
+import { buildFallbackLeadName, detectSourceFromUrl, normalizeExternalUrl } from '@/lib/leadLinks'
 import { generateId } from '@/lib/utils'
 
 const URL_SPLIT = /[\n,;\s]+/
@@ -39,15 +39,6 @@ function normalizeUrl(raw: string): string | null {
     return `https://${trimmed}`
   }
   return null
-}
-
-export function detectSourceFromUrl(url: string, fallback: LeadSource): LeadSource {
-  const lower = url.toLowerCase()
-  if (lower.includes('avito.ru') || lower.includes('avito.com')) return 'avito'
-  if (lower.includes('yandex.') && lower.includes('/maps')) return 'yandex_maps'
-  if (lower.includes('2gis.ru') || lower.includes('2gis.com')) return '2gis'
-  if (lower.includes('vk.com') || lower.includes('vk.ru') || lower.includes('vk.me')) return 'vk'
-  return fallback
 }
 
 function mockContactsForIndex(index: number): LeadContacts {
