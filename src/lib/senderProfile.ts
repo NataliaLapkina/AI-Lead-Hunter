@@ -151,6 +151,18 @@ function isFilledContactValue(value: string | undefined): value is string {
   return Boolean(trimmed && trimmed !== 'undefined' && trimmed !== 'null')
 }
 
+export function normalizeContactEmail(email: string): string {
+  return email.replace(/\s+/g, '')
+}
+
+function formatContactValue(label: string, value: string): string {
+  if (label === 'Email') {
+    return normalizeContactEmail(value.trim())
+  }
+  return value.trim()
+}
+
+/** Подпись с контактами из профиля; пустые поля скрываются, email без пробелов. */
 export function buildSenderSignature(profile?: Partial<AppProfile> | null): string {
   const sender = getSenderProfile(profile)
   const displayName =
@@ -168,7 +180,7 @@ export function buildSenderSignature(profile?: Partial<AppProfile> | null): stri
 
   for (const [label, value] of contactLines) {
     if (!isFilledContactValue(value)) continue
-    lines.push(`${label}: ${value.trim()}`)
+    lines.push(`${label}: ${formatContactValue(label, value)}`)
   }
 
   return lines.join('\n')
