@@ -1,7 +1,7 @@
 import type { AppSettings, NichePreset } from '@/domain/lead'
 import type { ISettingsRepository } from '@/repositories/interfaces/ISettingsRepository'
 import { STORAGE_KEYS } from '@/lib/constants'
-import { buildInitialNichePresets } from '@/lib/nichePresets'
+import { buildInitialNichePresets, normalizeAppSettings } from '@/lib/nichePresets'
 import { getStorageItem, setStorageItem } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 
@@ -16,11 +16,14 @@ function createDefaultSettings(): AppSettings {
 
 export class LocalStorageSettingsRepository implements ISettingsRepository {
   async get(): Promise<AppSettings> {
-    return getStorageItem<AppSettings>(STORAGE_KEYS.SETTINGS, createDefaultSettings())
+    const fallback = createDefaultSettings()
+    const raw = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+    return normalizeAppSettings(raw, fallback)
   }
 
   async save(settings: AppSettings): Promise<void> {
-    setStorageItem(STORAGE_KEYS.SETTINGS, settings)
+    const normalized = normalizeAppSettings(settings, createDefaultSettings())
+    setStorageItem(STORAGE_KEYS.SETTINGS, normalized)
   }
 
   async reset(): Promise<AppSettings> {
@@ -30,21 +33,41 @@ export class LocalStorageSettingsRepository implements ISettingsRepository {
   }
 
   async addNichePreset(name: string, description?: string): Promise<NichePreset> {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      throw new Error('Укажите название ниши')
+    }
+
     const settings = await this.get()
+    const exists = settings.nichePresets.some(
+      (p) => p.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    )
+    if (exists) {
+      throw new Error('Такая ниша уже есть в списке')
+    }
+
     const preset: NichePreset = {
       id: generateId(),
-      name,
+      name: trimmed,
       description,
       isDefault: false,
     }
-    settings.nichePresets.push(preset)
-    await this.save(settings)
+    await this.save({
+      ...settings,
+      nichePresets: [...settings.nichePresets, preset],
+    })
     return preset
   }
 
   async removeNichePreset(id: string): Promise<void> {
     const settings = await this.get()
-    settings.nichePresets = settings.nichePresets.filter((p) => p.id !== id)
-    await this.save(settings)
+    const preset = settings.nichePresets.find((p) => p.id === id)
+    if (!preset || preset.isDefault) {
+      return
+    }
+    await this.save({
+      ...settings,
+      nichePresets: settings.nichePresets.filter((p) => p.id !== id),
+    })
   }
 }

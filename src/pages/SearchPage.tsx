@@ -9,6 +9,7 @@ import { LeadForm } from '@/components/leads/LeadForm'
 import { useQueryGenerator } from '@/features/search/hooks/useQueryGenerator'
 import { useLeads } from '@/features/leads/hooks/useLeads'
 import { useSettingsStore } from '@/stores'
+import { getSearchNichePresets } from '@/lib/nichePresets'
 import { ru } from '@/i18n/ru'
 import { toast } from 'sonner'
 import type { CreateLeadInput, SearchQuery, LeadSource } from '@/domain/lead'
@@ -58,7 +59,7 @@ export function SearchPage() {
       <AppShell title={ru.search.title} subtitle={ru.search.subtitle}>
         <div className="mx-auto max-w-3xl space-y-8">
           <NicheSuggestions
-            presets={(settings?.nichePresets ?? []).filter((p) => p.isDefault)}
+            presets={getSearchNichePresets(settings?.nichePresets ?? [])}
             onSelect={handlePresetSelect}
           />
 

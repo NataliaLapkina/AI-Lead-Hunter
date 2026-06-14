@@ -54,7 +54,8 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
 
   updateSettings: async (settings) => {
     await repositories.settings.save(settings)
-    set({ settings })
+    const saved = await repositories.settings.get()
+    set({ settings: saved })
   },
 }))
 

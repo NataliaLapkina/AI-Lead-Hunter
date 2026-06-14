@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { Loader2, Download, Upload, Trash2, Plus, X } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,7 +7,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Download, Upload, Trash2, Plus, X } from 'lucide-react'
 import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings'
 import {
   AlertDialog,
@@ -23,16 +23,17 @@ import { useLeadStore } from '@/stores'
 import { repositories } from '@/repositories'
 import { clearAllAppData } from '@/lib/storage'
 import { exportLeadsToJson, getJsonFilename, parseLeadsFromJson } from '@/features/export/jsonExporter'
-import { downloadBlob, generateId } from '@/lib/utils'
+import { downloadBlob } from '@/lib/utils'
 import { ru } from '@/i18n/ru'
 import { toast } from 'sonner'
 
 export function SettingsPage() {
-  const { settings, fetchSettings, updateSettings } = useSettingsStore()
+  const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
   const { fetchLeads } = useLeadStore()
   const [name, setName] = useState('')
   const [businessType, setBusinessType] = useState('')
   const [newNiche, setNewNiche] = useState('')
+  const [isAddingNiche, setIsAddingNiche] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -57,25 +58,30 @@ export function SettingsPage() {
   }
 
   const handleAddNiche = async () => {
-    if (!settings || !newNiche.trim()) return
-    const preset = {
-      id: generateId(),
-      name: newNiche.trim(),
-      isDefault: false,
+    const trimmed = newNiche.trim()
+    if (!trimmed) return
+
+    setIsAddingNiche(true)
+    try {
+      await repositories.settings.addNichePreset(trimmed)
+      await fetchSettings()
+      setNewNiche('')
+      toast.success(ru.settings.nicheAdded)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ru.toast.error)
+    } finally {
+      setIsAddingNiche(false)
     }
-    await updateSettings({
-      ...settings,
-      nichePresets: [...settings.nichePresets, preset],
-    })
-    setNewNiche('')
   }
 
   const handleRemoveNiche = async (id: string) => {
-    if (!settings) return
-    await updateSettings({
-      ...settings,
-      nichePresets: settings.nichePresets.filter((p) => p.id !== id),
-    })
+    try {
+      await repositories.settings.removeNichePreset(id)
+      await fetchSettings()
+      toast.success(ru.settings.nicheRemoved)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ru.toast.error)
+    }
   }
 
   const handleExportJson = async () => {
@@ -111,7 +117,21 @@ export function SettingsPage() {
     toast.success('Данные очищены')
   }
 
+  if (isLoading && !settings) {
+    return (
+      <AppShell title={ru.settings.title} subtitle={ru.settings.subtitle}>
+        <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>{ru.common.loading}</span>
+        </div>
+      </AppShell>
+    )
+  }
+
   if (!settings) return null
+
+  const defaultPresets = settings.nichePresets.filter((p) => p.isDefault)
+  const customPresets = settings.nichePresets.filter((p) => !p.isDefault)
 
   return (
     <>
@@ -151,46 +171,74 @@ export function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <p className="text-sm font-medium">{ru.settings.nichesDefault}</p>
+                <p className="text-xs text-muted-foreground">{ru.settings.nichesDefaultHint}</p>
                 <div className="flex flex-wrap gap-2">
-                  {settings.nichePresets
-                    .filter((p) => p.isDefault)
-                    .map((preset) => (
-                      <Badge key={preset.id} variant="secondary" className="px-3 py-1">
-                        {preset.name}
-                      </Badge>
-                    ))}
+                  {defaultPresets.map((preset) => (
+                    <Badge
+                      key={preset.id}
+                      variant="muted"
+                      className="pointer-events-none select-none px-3 py-1 font-normal"
+                    >
+                      {preset.name}
+                    </Badge>
+                  ))}
                 </div>
               </div>
 
               <div className="space-y-2">
                 <p className="text-sm font-medium">{ru.settings.nichesCustom}</p>
                 <div className="flex flex-wrap gap-2">
-                  {settings.nichePresets.filter((p) => !p.isDefault).length === 0 ? (
+                  {customPresets.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Нет пользовательских ниш</p>
                   ) : (
-                    settings.nichePresets
-                      .filter((p) => !p.isDefault)
-                      .map((preset) => (
-                        <Badge key={preset.id} variant="outline" className="gap-1 px-3 py-1">
-                          {preset.name}
-                          <button type="button" onClick={() => handleRemoveNiche(preset.id)}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))
+                    customPresets.map((preset) => (
+                      <Badge
+                        key={preset.id}
+                        variant="outline"
+                        className="gap-1 px-2 py-1 pr-1 font-normal"
+                      >
+                        <span>{preset.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Удалить нишу ${preset.name}`}
+                          onClick={() => handleRemoveNiche(preset.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))
                   )}
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
+                  id="new-niche"
                   value={newNiche}
                   onChange={(e) => setNewNiche(e.target.value)}
                   placeholder="Название ниши"
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddNiche()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      void handleAddNiche()
+                    }
+                  }}
                 />
-                <Button variant="outline" onClick={handleAddNiche} className="gap-2">
-                  <Plus className="h-4 w-4" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleAddNiche()}
+                  disabled={!newNiche.trim() || isAddingNiche}
+                  className="gap-2 sm:shrink-0"
+                >
+                  {isAddingNiche ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                   {ru.settings.addNiche}
                 </Button>
               </div>
