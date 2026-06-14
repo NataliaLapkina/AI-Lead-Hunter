@@ -5,7 +5,7 @@ export const STORAGE_KEYS = {
   SCHEMA_VERSION: 'alh_schema_version',
 } as const
 
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 6
 
 export const APP_NAME = 'AI Lead Hunter'
 
@@ -36,10 +36,12 @@ export const IMPROVEMENT_OPPORTUNITIES = [
 ] as const
 
 export const LEAD_SOURCES = [
-  'manual',
-  'search',
-  'referral',
-  'social',
+  'avito',
+  'yandex_maps',
+  '2gis',
+  'vk',
+  'telegram',
+  'company_site',
   'other',
 ] as const
 

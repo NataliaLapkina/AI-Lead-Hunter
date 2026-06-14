@@ -5,7 +5,6 @@ export const leadContactsSchema = z.object({
   emails: z.array(z.string().email('Некорректный email')).default([]),
   phones: z.array(z.string().min(1)).default([]),
   telegram: z.string().optional(),
-  linkedin: z.string().url('Некорректная ссылка LinkedIn').optional().or(z.literal('')),
 })
 
 export const createLeadSchema = z.object({

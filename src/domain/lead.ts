@@ -7,7 +7,14 @@ export type LeadStatus =
   | 'lost'
   | 'archived'
 
-export type LeadSource = 'manual' | 'search' | 'referral' | 'social' | 'other'
+export type LeadSource =
+  | 'avito'
+  | 'yandex_maps'
+  | '2gis'
+  | 'vk'
+  | 'telegram'
+  | 'company_site'
+  | 'other'
 
 export type SearchPlatform = 'google' | 'whatsapp' | 'vk' | 'telegram' | 'other'
 
@@ -59,7 +66,6 @@ export interface LeadContacts {
   emails: string[]
   phones: string[]
   telegram?: string
-  linkedin?: string
 }
 
 export interface LeadActivity {

@@ -44,7 +44,7 @@ export function SearchPage() {
     setFormInitial({
       niche: query.niche,
       city: query.city ?? '',
-      source: 'search',
+      source: query.source ?? 'other',
     })
     setFormOpen(true)
   }

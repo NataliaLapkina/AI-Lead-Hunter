@@ -47,12 +47,11 @@ export function LeadForm({
   const [name, setName] = useState('')
   const [niche, setNiche] = useState('')
   const [city, setCity] = useState('')
-  const [source, setSource] = useState<CreateLeadInput['source']>('manual')
+  const [source, setSource] = useState<CreateLeadInput['source']>('other')
   const [website, setWebsite] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [telegram, setTelegram] = useState('')
-  const [linkedin, setLinkedin] = useState('')
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [opportunities, setOpportunities] = useState<ImprovementOpportunity[]>([])
@@ -72,7 +71,6 @@ export function LeadForm({
         setEmail(lead.contacts.emails[0] ?? '')
         setPhone(lead.contacts.phones[0] ?? '')
         setTelegram(lead.contacts.telegram ?? '')
-        setLinkedin(lead.contacts.linkedin ?? '')
         setNotes(lead.notes)
         setTags(lead.tags)
         setOpportunities(lead.opportunities ?? [])
@@ -80,12 +78,11 @@ export function LeadForm({
         setName(initialValues?.name ?? '')
         setNiche(initialValues?.niche ?? '')
         setCity(initialValues?.city ?? '')
-        setSource(initialValues?.source ?? 'manual')
+        setSource(initialValues?.source ?? 'other')
         setWebsite(initialValues?.website ?? '')
         setEmail(initialValues?.contacts?.emails?.[0] ?? '')
         setPhone(initialValues?.contacts?.phones?.[0] ?? '')
         setTelegram(initialValues?.contacts?.telegram ?? '')
-        setLinkedin(initialValues?.contacts?.linkedin ?? '')
         setNotes(initialValues?.notes ?? '')
         setTags(initialValues?.tags ?? [])
         setOpportunities(initialValues?.opportunities ?? [])
@@ -134,7 +131,6 @@ export function LeadForm({
         emails: email ? [email] : [],
         phones: phone ? [phone] : [],
         telegram: telegram || undefined,
-        linkedin: linkedin || undefined,
       },
       notes,
       tags,
@@ -262,11 +258,6 @@ export function LeadForm({
               <Label htmlFor="telegram">{ru.leads.formTelegram}</Label>
               <Input id="telegram" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="linkedin">{ru.leads.formLinkedin}</Label>
-            <Input id="linkedin" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
           </div>
 
           <div className="space-y-2">

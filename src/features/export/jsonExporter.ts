@@ -1,5 +1,6 @@
 import type { Lead, ImportResult } from '@/domain/lead'
-import { LEAD_SOURCES, LEAD_STATUSES } from '@/lib/constants'
+import { LEAD_STATUSES } from '@/lib/constants'
+import { resolveLeadSource } from '@/lib/leadSources'
 import { generateId } from '@/lib/utils'
 
 interface JsonExportPayload {
@@ -10,7 +11,7 @@ interface JsonExportPayload {
 
 export function exportLeadsToJson(leads: Lead[]): Blob {
   const payload: JsonExportPayload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     leads,
   }
@@ -28,16 +29,16 @@ function isValidLead(obj: unknown): obj is Lead {
   if (!obj || typeof obj !== 'object') return false
   const lead = obj as Record<string, unknown>
   return (
-    typeof lead.id === 'string' &&
     typeof lead.name === 'string' &&
     typeof lead.niche === 'string' &&
-    LEAD_STATUSES.includes(lead.status as Lead['status']) &&
-    LEAD_SOURCES.includes(lead.source as Lead['source'])
+    LEAD_STATUSES.includes(lead.status as Lead['status'])
   )
 }
 
 function normalizeImportedLead(raw: Lead): Lead {
   const now = new Date().toISOString()
+  const legacyLinkedin = (raw.contacts as { linkedin?: string } | undefined)?.linkedin
+
   return {
     ...raw,
     id: raw.id || generateId(),
@@ -46,11 +47,11 @@ function normalizeImportedLead(raw: Lead): Lead {
     tags: raw.tags ?? [],
     opportunities: raw.opportunities ?? [],
     comments: raw.comments ?? [],
+    source: resolveLeadSource(raw.source),
     contacts: {
       emails: raw.contacts?.emails ?? [],
       phones: raw.contacts?.phones ?? [],
-      telegram: raw.contacts?.telegram,
-      linkedin: raw.contacts?.linkedin,
+      telegram: raw.contacts?.telegram ?? legacyLinkedin,
     },
     activityLog: raw.activityLog?.length
       ? raw.activityLog

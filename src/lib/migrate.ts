@@ -1,5 +1,6 @@
 import type { AppSettings, Lead } from '@/domain/lead'
 import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
+import { resolveLeadSource } from './leadSources'
 import {
   buildInitialNichePresets,
   createDefaultNichePresets,
@@ -78,6 +79,23 @@ function migrateLeadsV5(): void {
   setStorageItem(STORAGE_KEYS.LEADS, migrated)
 }
 
+function migrateLeadsV6(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => ({
+    ...lead,
+    source: resolveLeadSource(lead.source),
+    contacts: {
+      emails: lead.contacts?.emails ?? [],
+      phones: lead.contacts?.phones ?? [],
+      telegram: lead.contacts?.telegram,
+    },
+  }))
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -95,6 +113,10 @@ export function runMigrations(): void {
 
   if (current < 5) {
     migrateLeadsV5()
+  }
+
+  if (current < 6) {
+    migrateLeadsV6()
   }
 
   if (current < SCHEMA_VERSION) {
