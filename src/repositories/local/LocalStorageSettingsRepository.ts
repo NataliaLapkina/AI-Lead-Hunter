@@ -2,6 +2,7 @@ import type { AppSettings, NichePreset } from '@/domain/lead'
 import type { ISettingsRepository } from '@/repositories/interfaces/ISettingsRepository'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { buildInitialNichePresets, normalizeAppSettings } from '@/lib/nichePresets'
+import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { getStorageItem, setStorageItem } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 
@@ -33,7 +34,7 @@ export class LocalStorageSettingsRepository implements ISettingsRepository {
   }
 
   async addNichePreset(name: string, description?: string): Promise<NichePreset> {
-    const trimmed = name.trim()
+    const trimmed = normalizeNicheName(name)
     if (!trimmed) {
       throw new Error('Укажите название ниши')
     }

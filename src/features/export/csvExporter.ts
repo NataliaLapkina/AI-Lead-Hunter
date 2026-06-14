@@ -1,5 +1,5 @@
 import type { Lead } from '@/domain/lead'
-import { getSourceLabel, getStatusLabel, ru } from '@/i18n/ru'
+import { getSourceLabel, getStatusLabel, getNicheLabel, ru } from '@/i18n/ru'
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { formatDateTime } from '@/lib/utils'
 
@@ -30,7 +30,7 @@ export function exportLeadsToCsv(leads: Lead[]): Blob {
   const rows = leads.map((lead) => [
     lead.id,
     lead.name,
-    lead.niche,
+    getNicheLabel(lead.niche),
     lead.city,
     getSourceLabel(lead.source),
     lead.website ?? '',

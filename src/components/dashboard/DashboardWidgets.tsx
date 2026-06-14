@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import type { Lead } from '@/domain/lead'
-import { ru } from '@/i18n/ru'
+import { ru, getNicheLabel } from '@/i18n/ru'
 import { formatDate } from '@/lib/utils'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { Button } from '@/components/ui/button'
@@ -66,7 +66,7 @@ export function RecentLeads({ leads, onLeadClick }: RecentLeadsProps) {
                 <div>
                   <p className="text-sm font-medium">{lead.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {lead.niche} · {formatDate(lead.createdAt)}
+                    {getNicheLabel(lead.niche)} · {formatDate(lead.createdAt)}
                   </p>
                 </div>
                 <LeadStatusBadge status={lead.status} />

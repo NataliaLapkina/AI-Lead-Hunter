@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Lead, LeadStatus, UpdateLeadInput } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel, getStatusLabel, ru } from '@/i18n/ru'
+import { getSourceLabel, getStatusLabel, getNicheLabel, ru } from '@/i18n/ru'
 import { formatDateTime, copyToClipboard } from '@/lib/utils'
 import { useSettingsStore } from '@/stores'
 import {
@@ -136,7 +136,7 @@ export function LeadDetailView({
           <h2 className="text-xl font-semibold">{lead.name}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <LeadStatusBadge status={lead.status} />
-            <span className="text-sm text-muted-foreground">{lead.niche}</span>
+            <span className="text-sm text-muted-foreground">{getNicheLabel(lead.niche)}</span>
           </div>
         </div>
         {showFullPageLink && (

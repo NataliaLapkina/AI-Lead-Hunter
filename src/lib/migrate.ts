@@ -1,10 +1,12 @@
 import type { AppSettings, Lead } from '@/domain/lead'
 import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
 import { resolveLeadSource } from './leadSources'
+import { normalizeNicheName } from './nicheDisplay'
 import {
   buildInitialNichePresets,
   createDefaultNichePresets,
   createUserNichePresets,
+  normalizeNichePresets,
 } from './nichePresets'
 import { getStorageItem, setStorageItem, getSchemaVersion, setSchemaVersion } from './storage'
 
@@ -96,6 +98,28 @@ function migrateLeadsV6(): void {
   setStorageItem(STORAGE_KEYS.LEADS, migrated)
 }
 
+function migrateLeadsV7(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => ({
+    ...lead,
+    niche: normalizeNicheName(lead.niche),
+  }))
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
+function migrateSettingsNichesV7(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    nichePresets: normalizeNichePresets(settings.nichePresets),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -117,6 +141,11 @@ export function runMigrations(): void {
 
   if (current < 6) {
     migrateLeadsV6()
+  }
+
+  if (current < 7) {
+    migrateLeadsV7()
+    migrateSettingsNichesV7()
   }
 
   if (current < SCHEMA_VERSION) {

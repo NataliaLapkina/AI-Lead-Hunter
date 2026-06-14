@@ -1,6 +1,7 @@
 import type { Lead, ImportResult } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
 import { resolveLeadSource } from '@/lib/leadSources'
+import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { generateId } from '@/lib/utils'
 
 interface JsonExportPayload {
@@ -48,6 +49,7 @@ function normalizeImportedLead(raw: Lead): Lead {
     opportunities: raw.opportunities ?? [],
     comments: raw.comments ?? [],
     source: resolveLeadSource(raw.source),
+    niche: normalizeNicheName(raw.niche),
     contacts: {
       emails: raw.contacts?.emails ?? [],
       phones: raw.contacts?.phones ?? [],

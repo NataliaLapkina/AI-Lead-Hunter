@@ -6,6 +6,7 @@ import type {
   LeadActivity,
 } from '@/domain/lead'
 import { LEAD_STATUSES, LEAD_SOURCES } from '@/lib/constants'
+import { formatNicheDisplay, nicheDisplayKey } from '@/lib/nicheDisplay'
 
 export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
   const byStatus = Object.fromEntries(
@@ -21,7 +22,8 @@ export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
 
   for (const lead of leads) {
     byStatus[lead.status]++
-    byNiche[lead.niche] = (byNiche[lead.niche] ?? 0) + 1
+    const nicheLabel = formatNicheDisplay(lead.niche)
+    byNiche[nicheLabel] = (byNiche[nicheLabel] ?? 0) + 1
     bySource[lead.source]++
     allActivity.push(...lead.activityLog)
   }
@@ -50,9 +52,15 @@ export function getActiveLeadsCount(leads: Lead[]): number {
 }
 
 export function getUniqueNiches(leads: Lead[]): string[] {
-  return [...new Set(leads.map((l) => l.niche))].sort((a, b) =>
-    a.localeCompare(b, 'ru'),
-  )
+  const byKey = new Map<string, string>()
+  for (const lead of leads) {
+    const key = nicheDisplayKey(lead.niche)
+    if (!key) continue
+    if (!byKey.has(key)) {
+      byKey.set(key, formatNicheDisplay(lead.niche))
+    }
+  }
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b, 'ru'))
 }
 
 export function getUniqueTags(leads: Lead[]): string[] {

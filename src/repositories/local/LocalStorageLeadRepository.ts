@@ -8,6 +8,7 @@ import type {
 } from '@/domain/lead'
 import type { ILeadRepository } from '@/repositories/interfaces/ILeadRepository'
 import { STORAGE_KEYS } from '@/lib/constants'
+import { formatNicheDisplay, nicheMatches } from '@/lib/nicheDisplay'
 import { getStorageItem, setStorageItem } from '@/lib/storage'
 import {
   createLeadEntity,
@@ -78,7 +79,7 @@ export class LocalStorageLeadRepository implements ILeadRepository {
     }
 
     if (filters.niche) {
-      leads = leads.filter((l) => l.niche === filters.niche)
+      leads = leads.filter((l) => nicheMatches(l.niche, filters.niche))
     }
 
     if (filters.source !== 'all') {
@@ -99,7 +100,7 @@ export class LocalStorageLeadRepository implements ILeadRepository {
         case 'status':
           return a.status.localeCompare(b.status) * dir
         case 'niche':
-          return a.niche.localeCompare(b.niche, 'ru') * dir
+          return formatNicheDisplay(a.niche).localeCompare(formatNicheDisplay(b.niche), 'ru') * dir
         case 'updatedAt':
           return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * dir
         case 'createdAt':

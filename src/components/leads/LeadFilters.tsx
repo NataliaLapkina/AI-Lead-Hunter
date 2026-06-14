@@ -1,6 +1,6 @@
 import type { LeadFilters, LeadSort, LeadSortField } from '@/domain/lead'
 import { LEAD_SOURCES, LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel, getStatusLabel, ru } from '@/i18n/ru'
+import { getSourceLabel, getStatusLabel, getNicheLabel, ru } from '@/i18n/ru'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
   Select,
@@ -73,7 +73,7 @@ export function LeadFiltersBar({
               <SelectItem value="all">{ru.common.all}</SelectItem>
               {niches.map((n) => (
                 <SelectItem key={n} value={n}>
-                  {n}
+                  {getNicheLabel(n)}
                 </SelectItem>
               ))}
             </SelectContent>

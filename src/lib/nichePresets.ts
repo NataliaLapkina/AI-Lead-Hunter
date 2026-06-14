@@ -1,5 +1,6 @@
 import type { AppSettings, NichePreset } from '@/domain/lead'
 import { DEFAULT_NICHE_PRESETS, USER_NICHE_PRESETS } from './constants'
+import { normalizeNicheName } from './nicheDisplay'
 
 const DEFAULT_NICHE_IDS = new Set<string>(DEFAULT_NICHE_PRESETS.map((n) => n.id))
 
@@ -33,7 +34,7 @@ export function normalizeNichePresets(presets: NichePreset[] | undefined | null)
 
   const normalized = presets.map((p) => ({
     ...p,
-    name: (p.name ?? '').trim() || p.id,
+    name: normalizeNicheName((p.name ?? '').trim() || p.id),
     isDefault: DEFAULT_NICHE_IDS.has(p.id),
   }))
 

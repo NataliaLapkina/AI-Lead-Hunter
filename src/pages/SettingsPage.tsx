@@ -24,7 +24,7 @@ import { repositories } from '@/repositories'
 import { clearAllAppData } from '@/lib/storage'
 import { exportLeadsToJson, getJsonFilename, parseLeadsFromJson } from '@/features/export/jsonExporter'
 import { downloadBlob } from '@/lib/utils'
-import { ru } from '@/i18n/ru'
+import { ru, getNicheLabel } from '@/i18n/ru'
 import { toast } from 'sonner'
 
 export function SettingsPage() {
@@ -179,7 +179,7 @@ export function SettingsPage() {
                       variant="muted"
                       className="pointer-events-none select-none px-3 py-1 font-normal"
                     >
-                      {preset.name}
+                      {getNicheLabel(preset.name)}
                     </Badge>
                   ))}
                 </div>
@@ -197,7 +197,7 @@ export function SettingsPage() {
                         variant="outline"
                         className="gap-1 px-2 py-1 pr-1 font-normal"
                       >
-                        <span>{preset.name}</span>
+                        <span>{getNicheLabel(preset.name)}</span>
                         <Button
                           type="button"
                           variant="ghost"

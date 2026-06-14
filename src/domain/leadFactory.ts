@@ -5,6 +5,7 @@ import type {
   LeadActivity,
 } from '@/domain/lead'
 import { generateId } from '@/lib/utils'
+import { normalizeNicheName } from '@/lib/nicheDisplay'
 
 export function createEmptyContacts(): Lead['contacts'] {
   return { emails: [], phones: [] }
@@ -22,7 +23,7 @@ export function createLeadEntity(input: CreateLeadInput): Lead {
   return {
     id: generateId(),
     name: input.name,
-    niche: input.niche,
+    niche: normalizeNicheName(input.niche),
     city: input.city,
     source: input.source,
     website: input.website || undefined,
@@ -82,6 +83,7 @@ export function updateLeadEntity(lead: Lead, input: UpdateLeadInput): Lead {
   return {
     ...lead,
     ...input,
+    niche: input.niche !== undefined ? normalizeNicheName(input.niche) : lead.niche,
     website: input.website === '' ? undefined : (input.website ?? lead.website),
     contacts: input.contacts ?? lead.contacts,
     tags: input.tags ?? lead.tags,

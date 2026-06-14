@@ -3,6 +3,7 @@ import type { Lead, CreateLeadInput, ImprovementOpportunity } from '@/domain/lea
 import { LEAD_SOURCES } from '@/lib/constants'
 import { createLeadSchema } from '@/domain/validation'
 import { getSourceLabel, ru } from '@/i18n/ru'
+import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { createEmptyContacts } from '@/domain/leadFactory'
 import { suggestOpportunitiesFromLead } from '@/features/leads/improvements'
 import { ImprovementChecklist } from '@/components/leads/ImprovementChecklist'
@@ -64,7 +65,7 @@ export function LeadForm({
     if (open) {
       if (lead) {
         setName(lead.name)
-        setNiche(lead.niche)
+        setNiche(normalizeNicheName(lead.niche))
         setCity(lead.city)
         setSource(lead.source)
         setWebsite(lead.website ?? '')
@@ -76,7 +77,7 @@ export function LeadForm({
         setOpportunities(lead.opportunities ?? [])
       } else {
         setName(initialValues?.name ?? '')
-        setNiche(initialValues?.niche ?? '')
+        setNiche(normalizeNicheName(initialValues?.niche ?? ''))
         setCity(initialValues?.city ?? '')
         setSource(initialValues?.source ?? 'other')
         setWebsite(initialValues?.website ?? '')

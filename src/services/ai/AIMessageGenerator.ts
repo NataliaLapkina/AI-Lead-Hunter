@@ -5,6 +5,7 @@ import {
   collectOutreachBullets,
 } from '@/features/leads/outreachMessage'
 import { getOpportunityLabel } from '@/features/leads/improvements'
+import { getNicheLabel } from '@/i18n/ru'
 import { callOpenAI } from './openaiClient'
 
 export interface AIMessageInput {
@@ -43,7 +44,7 @@ export async function generateAIMessage(
 
 Данные клиента (для внутренней персонализации, не цитируй нишу в тексте):
 - Компания: ${lead.name}
-- Ниша: ${lead.niche}
+- Ниша: ${getNicheLabel(lead.niche)}
 - Город: ${lead.city || 'не указан'}
 - Сайт: ${lead.website || 'нет'}
 - Отмеченные проблемы в карточке: ${checkedProblems || 'не указаны'}

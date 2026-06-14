@@ -314,3 +314,5 @@ export function getPlatformLabel(platform: SearchPlatform | string): string {
   }
   return String(platform)
 }
+
+export { formatNicheDisplay as getNicheLabel } from '@/lib/nicheDisplay'

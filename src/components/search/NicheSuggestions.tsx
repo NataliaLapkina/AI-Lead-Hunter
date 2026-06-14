@@ -1,5 +1,5 @@
 import type { NichePreset } from '@/domain/lead'
-import { ru } from '@/i18n/ru'
+import { ru, getNicheLabel } from '@/i18n/ru'
 import { Badge } from '@/components/ui/badge'
 
 interface NicheSuggestionsProps {
@@ -25,7 +25,7 @@ export function NicheSuggestions({ presets, onSelect }: NicheSuggestionsProps) {
               variant="outline"
               className="cursor-pointer px-3 py-1.5 transition-colors hover:border-primary hover:bg-primary/5"
             >
-              {preset.name}
+              {getNicheLabel(preset.name)}
             </Badge>
           </button>
         ))}

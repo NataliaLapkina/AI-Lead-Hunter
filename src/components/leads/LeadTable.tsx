@@ -1,6 +1,6 @@
 import type { Lead, LeadStatus } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel } from '@/i18n/ru'
+import { getSourceLabel, getNicheLabel } from '@/i18n/ru'
 import { formatDate } from '@/lib/utils'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { Badge } from '@/components/ui/badge'
@@ -61,7 +61,7 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
                     </a>
                   )}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{lead.niche}</td>
+                <td className="px-4 py-3 text-muted-foreground">{getNicheLabel(lead.niche)}</td>
                 <td className="px-4 py-3 text-muted-foreground">{lead.city || '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {getSourceLabel(lead.source)}
@@ -128,7 +128,7 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
               <div>
                 <p className="font-medium">{lead.name}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {lead.niche}
+                  {getNicheLabel(lead.niche)}
                   {lead.city && ` · ${lead.city}`}
                 </p>
               </div>

@@ -1,6 +1,8 @@
 import type { Lead, LeadStatus, ImprovementOpportunity } from '@/domain/lead'
 import { LEAD_STATUSES, IMPROVEMENT_OPPORTUNITIES } from '@/lib/constants'
 import { resolveLeadSource } from '@/lib/leadSources'
+import { getNicheLabel } from '@/i18n/ru'
+import { normalizeNicheName } from '@/lib/nicheDisplay'
 
 export const SHEET_HEADERS = [
   'id',
@@ -25,7 +27,7 @@ export function leadToSheetRow(lead: Lead): string[] {
   return [
     lead.id,
     lead.name,
-    lead.niche,
+    getNicheLabel(lead.niche),
     lead.city,
     lead.source,
     lead.website ?? '',
@@ -64,7 +66,7 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
   return {
     id: row[0],
     name: row[1] ?? '',
-    niche: row[2] ?? '',
+    niche: normalizeNicheName(row[2] ?? ''),
     city: row[3] ?? '',
     source,
     website: row[5] || undefined,
