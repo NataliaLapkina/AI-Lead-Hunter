@@ -15,6 +15,7 @@ const defaultFilters: LeadFilters = {
   status: 'all',
   niche: '',
   source: 'all',
+  potential: 'all',
   tags: [],
 }
 

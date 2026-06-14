@@ -17,6 +17,7 @@ import {
   normalizeEmail,
 } from '@/domain/leadFactory'
 import { appendComment } from '@/domain/leadComments'
+import { matchesPotentialFilter } from '@/lib/leadScore'
 
 export class LocalStorageLeadRepository implements ILeadRepository {
   private getLeads(): Lead[] {
@@ -93,6 +94,10 @@ export class LocalStorageLeadRepository implements ILeadRepository {
       leads = leads.filter((l) =>
         filters.tags.every((tag) => l.tags.includes(tag)),
       )
+    }
+
+    if (filters.potential !== 'all') {
+      leads = leads.filter((l) => matchesPotentialFilter(l, filters.potential))
     }
 
     leads.sort((a, b) => {

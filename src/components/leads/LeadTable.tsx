@@ -1,8 +1,9 @@
 import type { Lead, LeadStatus } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel, getNicheLabel } from '@/i18n/ru'
+import { getSourceLabel, getNicheLabel, ru } from '@/i18n/ru'
 import { formatDate } from '@/lib/utils'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
+import { LeadScoreBadge } from '@/components/leads/LeadScoreBadge'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -35,6 +36,7 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
               <th className="px-4 py-3 text-left font-medium">Город</th>
               <th className="px-4 py-3 text-left font-medium">Источник</th>
               <th className="px-4 py-3 text-left font-medium">Статус</th>
+              <th className="px-4 py-3 text-left font-medium">{ru.leads.potentialColumn}</th>
               <th className="px-4 py-3 text-left font-medium">Теги</th>
               <th className="px-4 py-3 text-left font-medium">Создан</th>
             </tr>
@@ -75,6 +77,9 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
                       ))}
                     </SelectContent>
                   </Select>
+                </td>
+                <td className="px-4 py-3">
+                  <LeadScoreBadge lead={lead} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-1">
@@ -126,6 +131,7 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <LeadStatusBadge status={lead.status} />
+                  <LeadScoreBadge lead={lead} />
                   {(lead.opportunities?.length ?? 0) > 0 && (
                     <Badge variant="warning" className="text-xs">
                       {lead.opportunities!.length} улуч.

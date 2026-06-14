@@ -1,6 +1,6 @@
-import type { LeadFilters, LeadSort, LeadSortField } from '@/domain/lead'
+import type { LeadFilters, LeadSort, LeadSortField, LeadPotentialFilter } from '@/domain/lead'
 import { LEAD_SOURCES, LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel, getStatusLabel, getNicheLabel, ru } from '@/i18n/ru'
+import { getSourceLabel, getStatusLabel, getNicheLabel, getLeadPotentialShortLabel, ru } from '@/i18n/ru'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
   Select,
@@ -35,7 +35,7 @@ export function LeadFiltersBar({
         onChange={(search) => onFiltersChange({ ...filters, search })}
         placeholder={ru.leads.searchPlaceholder}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-2">
           <Label>{ru.leads.filterByStatus}</Label>
           <Select
@@ -98,6 +98,29 @@ export function LeadFiltersBar({
                   {getSourceLabel(s)}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{ru.leads.filterByPotential}</Label>
+          <Select
+            value={filters.potential}
+            onValueChange={(potential) =>
+              onFiltersChange({
+                ...filters,
+                potential: potential as LeadPotentialFilter,
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{ru.common.all}</SelectItem>
+              <SelectItem value="high">{getLeadPotentialShortLabel('high')}</SelectItem>
+              <SelectItem value="medium">{getLeadPotentialShortLabel('medium')}</SelectItem>
+              <SelectItem value="low">{getLeadPotentialShortLabel('low')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

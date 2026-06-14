@@ -7,6 +7,7 @@ import type {
 } from '@/domain/lead'
 import { LEAD_STATUSES, LEAD_SOURCES } from '@/lib/constants'
 import { formatNicheDisplay, nicheDisplayKey } from '@/lib/nicheDisplay'
+import { computeLeadScore } from '@/lib/leadScore'
 
 export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
   const byStatus = Object.fromEntries(
@@ -17,6 +18,7 @@ export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
   const bySource = Object.fromEntries(
     LEAD_SOURCES.map((s) => [s, 0]),
   ) as Record<LeadSource, number>
+  const byPotential = { low: 0, medium: 0, high: 0 }
 
   const allActivity: LeadActivity[] = []
 
@@ -25,6 +27,7 @@ export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
     const nicheLabel = formatNicheDisplay(lead.niche)
     byNiche[nicheLabel] = (byNiche[nicheLabel] ?? 0) + 1
     bySource[lead.source]++
+    byPotential[computeLeadScore(lead).level]++
     allActivity.push(...lead.activityLog)
   }
 
@@ -40,6 +43,7 @@ export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
     byStatus,
     byNiche,
     bySource,
+    byPotential,
     conversionRate,
     recentActivity: allActivity.slice(0, 20),
   }

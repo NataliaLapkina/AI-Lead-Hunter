@@ -4,6 +4,7 @@ import type {
   LeadSource,
   SearchPlatform,
   ActivityType,
+  LeadPotentialLevel,
 } from '@/domain/lead'
 
 export const ru = {
@@ -173,6 +174,8 @@ export const ru = {
     filterByStatus: 'Статус',
     filterByNiche: 'Ниша',
     filterBySource: 'Источник',
+    filterByPotential: 'Потенциал',
+    potentialColumn: 'Потенциал',
     filterByTags: 'Теги',
     sortBy: 'Сортировать по',
     emptyTitle: 'База лидов пуста',
@@ -257,6 +260,19 @@ export const ru = {
     activity: 'Последняя активность',
     emptyTitle: 'Недостаточно данных',
     emptyDescription: 'Добавьте лидов, чтобы увидеть аналитику.',
+    potentialHigh: 'Высокий потенциал',
+    potentialMedium: 'Средний потенциал',
+    potentialLow: 'Низкий потенциал',
+  },
+  potential: {
+    low: 'низкий',
+    medium: 'средний',
+    high: 'высокий',
+  },
+  potentialShort: {
+    low: 'Низкий',
+    medium: 'Средний',
+    high: 'Высокий',
   },
   settings: {
     title: 'Настройки',
@@ -378,3 +394,11 @@ export function getPlatformLabel(platform: SearchPlatform | string): string {
 }
 
 export { formatNicheDisplay as getNicheLabel } from '@/lib/nicheDisplay'
+
+export function getLeadPotentialLabel(level: LeadPotentialLevel): string {
+  return ru.potential[level]
+}
+
+export function getLeadPotentialShortLabel(level: LeadPotentialLevel): string {
+  return ru.potentialShort[level]
+}

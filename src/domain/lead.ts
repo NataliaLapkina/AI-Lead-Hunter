@@ -117,11 +117,16 @@ export interface SearchQuery {
   createdAt: string
 }
 
+export type LeadPotentialLevel = 'low' | 'medium' | 'high'
+
+export type LeadPotentialFilter = 'all' | LeadPotentialLevel
+
 export interface AnalyticsSummary {
   totalLeads: number
   byStatus: Record<LeadStatus, number>
   byNiche: Record<string, number>
   bySource: Record<LeadSource, number>
+  byPotential: Record<LeadPotentialLevel, number>
   conversionRate: number
   recentActivity: LeadActivity[]
 }
@@ -162,6 +167,7 @@ export interface LeadFilters {
   status: LeadStatus | 'all'
   niche: string
   source: LeadSource | 'all'
+  potential: LeadPotentialFilter
   tags: string[]
 }
 
