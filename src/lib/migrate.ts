@@ -1,0 +1,108 @@
+import type { AppSettings, Lead } from '@/domain/lead'
+import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
+import {
+  buildInitialNichePresets,
+  createDefaultNichePresets,
+  createUserNichePresets,
+} from './nichePresets'
+import { getStorageItem, setStorageItem, getSchemaVersion, setSchemaVersion } from './storage'
+
+function migrateSettingsPresetsV2(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  const onlyDefaults = settings.nichePresets.every((p) => p.isDefault)
+  if (!onlyDefaults) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    nichePresets: createDefaultNichePresets(),
+  })
+}
+
+function migrateSettingsPresetsV3(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  const defaults = createDefaultNichePresets()
+  const seedUser = createUserNichePresets()
+
+  const customUser = settings.nichePresets.filter(
+    (p) =>
+      !p.isDefault &&
+      !seedUser.some((s) => s.id === p.id) &&
+      !defaults.some((d) => d.id === p.id),
+  )
+
+  const existingUser = settings.nichePresets.filter((p) => !p.isDefault)
+  const mergedUser = [...seedUser]
+  for (const preset of existingUser) {
+    if (!mergedUser.some((m) => m.id === preset.id)) {
+      mergedUser.push(preset)
+    }
+  }
+  for (const preset of customUser) {
+    if (!mergedUser.some((m) => m.id === preset.id)) {
+      mergedUser.push(preset)
+    }
+  }
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    nichePresets: [...defaults, ...mergedUser],
+  })
+}
+
+function migrateLeadsV4(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => ({
+    ...lead,
+    opportunities: lead.opportunities ?? [],
+  }))
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
+function migrateLeadsV5(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => ({
+    ...lead,
+    opportunities: lead.opportunities ?? [],
+    comments: lead.comments ?? [],
+  }))
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
+export function runMigrations(): void {
+  const current = getSchemaVersion()
+
+  if (current < 2) {
+    migrateSettingsPresetsV2()
+  }
+
+  if (current < 3) {
+    migrateSettingsPresetsV3()
+  }
+
+  if (current < 4) {
+    migrateLeadsV4()
+  }
+
+  if (current < 5) {
+    migrateLeadsV5()
+  }
+
+  if (current < SCHEMA_VERSION) {
+    setSchemaVersion(SCHEMA_VERSION)
+  }
+}
+
+/** Для первого запуска без сохранённых настроек */
+export function getInitialNichePresets() {
+  return buildInitialNichePresets()
+}
