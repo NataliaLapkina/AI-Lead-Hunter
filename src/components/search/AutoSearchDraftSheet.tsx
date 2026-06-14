@@ -5,6 +5,7 @@ import { getSourceLabel, ru } from '@/i18n/ru'
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { regenerateDraftMessage } from '@/services/search/autoLeadSearchService'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
+import { useSettingsStore } from '@/stores'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +39,7 @@ export function AutoSearchDraftSheet({
   onOpenChange,
   onSave,
 }: AutoSearchDraftSheetProps) {
+  const { settings } = useSettingsStore()
   const [form, setForm] = useState<AutoSearchDraftLead | null>(null)
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function AutoSearchDraftSheet({
   const handleRegenerateMessage = () => {
     setForm((prev) => {
       if (!prev) return prev
-      return { ...prev, generatedMessage: regenerateDraftMessage(prev) }
+      return { ...prev, generatedMessage: regenerateDraftMessage(prev, settings?.profile) }
     })
   }
 

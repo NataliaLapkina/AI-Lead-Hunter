@@ -11,6 +11,7 @@ import {
 } from './nichePresets'
 import { migrateLegacyContacts } from './leadContacts'
 import { fixLegacyLeadName, isSourcePlatformUrl, splitWebsiteAndSourceUrl } from './leadLinks'
+import { scrubTechnicalLeadNamesFromMessage } from '@/features/leads/outreachMessage'
 import { getStorageItem, setStorageItem, getSchemaVersion, setSchemaVersion } from './storage'
 
 function migrateSettingsPresetsV2(): void {
@@ -220,6 +221,42 @@ function migrateSettingsProfileV13(): void {
   })
 }
 
+function migrateLeadsLegacyNamesV14(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => {
+    const contacts = migrateLegacyContacts(lead.contacts)
+    const fixed = fixLegacyLeadName({ ...lead, contacts })
+    const merged = {
+      ...lead,
+      ...fixed,
+      niche: normalizeNicheName(lead.niche),
+      source: resolveLeadSource(fixed.source),
+      contacts: migrateLegacyContacts(fixed.contacts),
+    }
+
+    return {
+      ...merged,
+      generatedMessage: merged.generatedMessage
+        ? scrubTechnicalLeadNamesFromMessage(merged.generatedMessage, merged)
+        : merged.generatedMessage,
+    }
+  })
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
+function migrateSettingsContactsV14(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    profile: normalizeAppProfile(settings.profile, createDefaultAppProfile()),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -266,6 +303,11 @@ export function runMigrations(): void {
 
   if (current < 13) {
     migrateSettingsProfileV13()
+  }
+
+  if (current < 14) {
+    migrateLeadsLegacyNamesV14()
+    migrateSettingsContactsV14()
   }
 
   if (current < SCHEMA_VERSION) {

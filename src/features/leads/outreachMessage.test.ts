@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { AppProfile, Lead } from '@/domain/lead'
-import { isFallbackLeadName, isPlaceholderLeadName, sanitizeLeadName } from '@/lib/leadLinks'
+import {
+  fixLegacyLeadName,
+  isFallbackLeadName,
+  isTechnicalLeadName,
+  sanitizeLeadName,
+} from '@/lib/leadLinks'
 import {
   buildOutreachMessage,
   finalizeOutreachMessage,
   getSafeLeadIntro,
   safeLeadName,
+  scrubLegacyNamesFromText,
 } from './outreachMessage'
 
 function createTestLead(overrides: Partial<Lead> = {}): Lead {
@@ -36,6 +42,7 @@ const nataliaProfile: Partial<AppProfile> = {
   telegram: '@natalia',
   vk: 'vk.com/natalia',
   email: 'natalia@example.com',
+  website: 'https://natalia.dev',
   portfolio: 'https://portfolio.example.com',
 }
 
@@ -46,14 +53,48 @@ describe('sanitizeLeadName', () => {
     expect(sanitizeLeadName('Item 100002')).toBeNull()
   })
 
-  it('detects URLs, empty values and fallback names', () => {
-    expect(sanitizeLeadName('https://vk.com/example')).toBeNull()
-    expect(sanitizeLeadName('')).toBeNull()
+  it('detects legacy source prefixes and fallback names', () => {
+    expect(sanitizeLeadName('Яндекс Карты — Мебельщик 5')).toBeNull()
+    expect(sanitizeLeadName('Авито — Нутрициолог 3')).toBeNull()
     expect(sanitizeLeadName('Нутрициолог из Авито', { niche: 'Нутрициолог', source: 'avito' })).toBeNull()
+    expect(sanitizeLeadName('Компания из VK')).toBeNull()
   })
 
   it('allows real company names', () => {
     expect(sanitizeLeadName('Тест Клиника')).toBe('Тест Клиника')
+  })
+})
+
+describe('fixLegacyLeadName', () => {
+  it('migrates Item to fallback by source url', () => {
+    const fixed = fixLegacyLeadName({
+      name: 'Item 100000',
+      niche: 'Мебельщик',
+      source: 'yandex_maps',
+      sourceUrl: 'https://yandex.ru/maps/org/mebel/1',
+      contacts: {},
+    })
+    expect(fixed.name).toBe('Мебельщик из Яндекс Карт')
+  })
+
+  it('migrates Yandex legacy prefix', () => {
+    const fixed = fixLegacyLeadName({
+      name: 'Яндекс Карты — Мебельщик 5',
+      niche: 'Мебельщик',
+      source: 'yandex_maps',
+      contacts: {},
+    })
+    expect(fixed.name).toBe('Мебельщик из Яндекс Карт')
+  })
+
+  it('migrates Avito legacy prefix', () => {
+    const fixed = fixLegacyLeadName({
+      name: 'Авито — Нутрициолог 3',
+      niche: 'Нутрициолог',
+      source: 'avito',
+      contacts: {},
+    })
+    expect(fixed.name).toBe('Нутрициолог из Авито')
   })
 })
 
@@ -64,34 +105,28 @@ describe('getSafeLeadIntro', () => {
     )
   })
 
-  it('omits technical Item name', () => {
+  it('omits technical legacy names', () => {
     expect(getSafeLeadIntro(createTestLead({ name: 'Item 100002' }))).toBe(
       'Изучила вашу компанию и заметила несколько точек роста:',
     )
-  })
-
-  it('omits name when empty', () => {
-    expect(getSafeLeadIntro(createTestLead({ name: '' }))).toBe(
+    expect(getSafeLeadIntro(createTestLead({ name: 'Яндекс Карты — Мебельщик 5', niche: 'Мебельщик', source: 'yandex_maps' }))).toBe(
       'Изучила вашу компанию и заметила несколько точек роста:',
     )
   })
 })
 
 describe('buildOutreachMessage', () => {
-  it('does not include Item placeholders in the final text', () => {
-    for (const itemName of ['Item 100000', 'Item 100001', 'Item 100002']) {
-      const message = buildOutreachMessage(
-        createTestLead({
-          name: itemName,
-          source: 'avito',
-          sourceUrl: 'https://www.avito.ru/moscow/nutritionist/item_100000',
-        }),
-        nataliaProfile,
-      )
+  it('does not include legacy placeholders in the final text', () => {
+    const cases = [
+      createTestLead({ name: 'Item 100002', source: 'avito' }),
+      createTestLead({ name: 'Яндекс Карты — Мебельщик 5', niche: 'Мебельщик', source: 'yandex_maps' }),
+      createTestLead({ name: 'Мебельщик из Яндекс Карт', niche: 'Мебельщик', source: 'yandex_maps' }),
+    ]
 
-      expect(message).not.toContain('Item 100000')
-      expect(message).not.toContain('Item 100001')
+    for (const lead of cases) {
+      const message = buildOutreachMessage(lead, nataliaProfile)
       expect(message).not.toContain('Item 100002')
+      expect(message).not.toContain('Яндекс Карты —')
       expect(message).not.toContain('undefined')
       expect(message).not.toContain('null')
       expect(message).toContain('Изучила вашу компанию и заметила несколько точек роста:')
@@ -112,6 +147,7 @@ describe('buildOutreachMessage', () => {
     expect(message).toContain('Telegram: @natalia')
     expect(message).toContain('VK: vk.com/natalia')
     expect(message).toContain('Email: natalia@example.com')
+    expect(message).toContain('Сайт: https://natalia.dev')
     expect(message).toContain('Портфолио: https://portfolio.example.com')
   })
 
@@ -120,10 +156,20 @@ describe('buildOutreachMessage', () => {
 
     expect(message).toContain('С уважением,')
     expect(message).toContain('Наталья Лапкина')
-    expect(message).not.toMatch(/WhatsApp:\s*\n/)
-    expect(message).not.toContain('WhatsApp: \n')
+    expect(message).not.toContain('WhatsApp:')
     expect(message).not.toContain('Telegram:')
     expect(message).not.toContain('Email:')
+    expect(message).not.toContain('Сайт:')
+  })
+})
+
+describe('scrubLegacyNamesFromText', () => {
+  it('removes Item and Yandex legacy fragments', () => {
+    const cleaned = scrubLegacyNamesFromText(
+      'Изучила вашу компанию «Item 100002» и «Яндекс Карты — Мебельщик 5»',
+    )
+    expect(cleaned).not.toContain('Item 100002')
+    expect(cleaned).not.toContain('Яндекс Карты —')
   })
 })
 
@@ -144,9 +190,10 @@ describe('finalizeOutreachMessage', () => {
   })
 })
 
-describe('isPlaceholderLeadName', () => {
-  it('flags Item names', () => {
-    expect(isPlaceholderLeadName('Item 100000')).toBe(true)
+describe('isTechnicalLeadName', () => {
+  it('flags Item and legacy names', () => {
+    expect(isTechnicalLeadName('Item 100000')).toBe(true)
+    expect(isTechnicalLeadName('Авито — Нутрициолог 3')).toBe(true)
   })
 })
 

@@ -4,6 +4,7 @@ import { AutoSearchForm } from '@/components/search/AutoSearchForm'
 import { AutoSearchPreviewTable } from '@/components/search/AutoSearchPreviewTable'
 import { AutoSearchDraftSheet } from '@/components/search/AutoSearchDraftSheet'
 import { useLeads } from '@/features/leads/hooks/useLeads'
+import { useSettingsStore } from '@/stores'
 import {
   draftToCreateLeadInput,
   runAutoLeadSearch,
@@ -16,6 +17,7 @@ import type { AutoSearchDraftLead, AutoSearchParams } from '@/domain/lead'
 
 export function AutoSearchPage() {
   const { importLeads } = useLeads()
+  const { settings } = useSettingsStore()
   const [drafts, setDrafts] = useState<AutoSearchDraftLead[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -26,7 +28,7 @@ export function AutoSearchPage() {
     setIsSearching(true)
     try {
       await new Promise((r) => setTimeout(r, 400))
-      const results = runAutoLeadSearch(params)
+      const results = runAutoLeadSearch(params, settings?.profile)
       setDrafts(results)
     } finally {
       setIsSearching(false)

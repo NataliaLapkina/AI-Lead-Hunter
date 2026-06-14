@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Lead, LeadStatus, UpdateLeadInput } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
@@ -68,9 +68,13 @@ export function LeadDetailView({
   onAddComment,
   showFullPageLink = true,
 }: LeadDetailViewProps) {
-  const { settings } = useSettingsStore()
+  const { settings, fetchSettings } = useSettingsStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAuditing, setIsAuditing] = useState(false)
+
+  useEffect(() => {
+    void fetchSettings()
+  }, [fetchSettings])
 
   const apiKey = settings?.integrations.openaiApiKey
 

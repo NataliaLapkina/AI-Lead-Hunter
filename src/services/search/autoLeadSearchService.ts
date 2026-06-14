@@ -1,4 +1,5 @@
 import type {
+  AppProfile,
   AutoSearchDraftLead,
   AutoSearchParams,
   AutoSearchSource,
@@ -109,6 +110,7 @@ function buildDraftLead(
   url: string,
   source: LeadSource,
   index: number,
+  senderProfile?: Partial<AppProfile>,
 ): AutoSearchDraftLead {
   const niche = normalizeNicheName(params.niche)
   const resolved = resolveLeadFieldsFromSourceUrl(url, source, niche)
@@ -154,12 +156,15 @@ function buildDraftLead(
     website: resolved.website,
     contacts,
     opportunities,
-    generatedMessage: buildOutreachMessage(leadForMessage),
+    generatedMessage: buildOutreachMessage(leadForMessage, senderProfile),
     notes: '',
   }
 }
 
-export function runAutoLeadSearch(params: AutoSearchParams): AutoSearchDraftLead[] {
+export function runAutoLeadSearch(
+  params: AutoSearchParams,
+  senderProfile?: Partial<AppProfile>,
+): AutoSearchDraftLead[] {
   const count = Math.min(Math.max(params.count, 1), 50)
   const links = parseLinksFromText(params.linksText ?? '')
 
@@ -171,13 +176,14 @@ export function runAutoLeadSearch(params: AutoSearchParams): AutoSearchDraftLead
         url,
         detectSourceFromUrl(url, params.source),
         index,
+        senderProfile,
       ),
     )
   }
 
   return Array.from({ length: count }, (_, index) => {
     const url = buildMockUrl(params.source, params.niche, params.city, index)
-    return buildDraftLead(params, url, params.source, index)
+    return buildDraftLead(params, url, params.source, index, senderProfile)
   })
 }
 
@@ -198,7 +204,10 @@ export function draftToCreateLeadInput(draft: AutoSearchDraftLead) {
   }
 }
 
-export function regenerateDraftMessage(draft: AutoSearchDraftLead): string {
+export function regenerateDraftMessage(
+  draft: AutoSearchDraftLead,
+  senderProfile?: Partial<AppProfile>,
+): string {
   const lead: Lead = {
     id: draft.id,
     name: draft.name,
@@ -218,5 +227,5 @@ export function regenerateDraftMessage(draft: AutoSearchDraftLead): string {
     updatedAt: new Date().toISOString(),
     activityLog: [],
   }
-  return buildOutreachMessage(lead)
+  return buildOutreachMessage(lead, senderProfile)
 }

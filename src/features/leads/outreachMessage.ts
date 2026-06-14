@@ -1,7 +1,7 @@
 import type { ImprovementOpportunity, Lead, AppProfile } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
-import { sanitizeLeadName } from '@/lib/leadLinks'
+import { isTechnicalLeadName, sanitizeLeadName } from '@/lib/leadLinks'
 import {
   DEFAULT_SENDER_PROFILE,
   OUTREACH_SENDER,
@@ -13,7 +13,7 @@ import {
 } from '@/lib/senderProfile'
 
 export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName }
-export { sanitizeLeadName } from '@/lib/leadLinks'
+export { sanitizeLeadName, isTechnicalLeadName } from '@/lib/leadLinks'
 export type { SenderProfile }
 
 export function safeLeadName(lead: Lead): string | null {
@@ -37,20 +37,40 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+const LEGACY_MESSAGE_PATTERNS: RegExp[] = [
+  /«\s*Item\s+\d+\s*»/gi,
+  /\bItem\s+\d+\b/gi,
+  /«\s*[^»]*Яндекс\s+Карты\s*[—\-–][^»]*»/gi,
+  /Яндекс\s+Карты\s*[—\-–]\s*[^\n.!?«»]+/gi,
+  /«\s*[^»]*Авито\s*[—\-–][^»]*»/gi,
+  /Авито\s*[—\-–]\s*[^\n.!?«»]+/gi,
+  /«\s*[^»]*(?:из Авито|из Яндекс Карт|из 2ГИС|Компания из VK)[^»]*»/gi,
+  /(?:из Авито|из Яндекс Карт|из 2ГИС|Компания из VK)/gi,
+  /https?:\/\/[^\s»]+/gi,
+]
+
+export function scrubLegacyNamesFromText(text: string): string {
+  let result = text
+  for (const pattern of LEGACY_MESSAGE_PATTERNS) {
+    result = result.replace(pattern, '')
+  }
+  return result
+}
+
 export function scrubTechnicalLeadNamesFromMessage(message: string, lead: Lead): string {
-  let result = message
+  let result = scrubLegacyNamesFromText(message)
   const rawName = lead.name?.trim()
 
-  if (rawName && !sanitizeLeadName(rawName, lead)) {
+  if (rawName && isTechnicalLeadName(rawName, lead)) {
     result = result.replace(new RegExp(`«\\s*${escapeRegExp(rawName)}\\s*»`, 'gi'), '')
     result = result.replace(new RegExp(escapeRegExp(rawName), 'gi'), '')
   }
 
-  result = result.replace(/«\s*Item\s+\d+\s*»/gi, '')
-  result = result.replace(/\bItem\s+\d+\b/gi, '')
   result = result.replace(/\b(undefined|null)\b/gi, '')
+  result = result.replace(/Изучила вашу компанию\s+«\s*»\s*и заметила/gi, 'Изучила вашу компанию и заметила')
+  result = result.replace(/Изучила вашу компанию\s+и\s+и заметила/gi, 'Изучила вашу компанию и заметила')
+  result = result.replace(/Изучила\s+и заметила/gi, 'Изучила вашу компанию и заметила')
   result = result.replace(/Изучила вашу компанию\s+и заметила/g, 'Изучила вашу компанию и заметила')
-  result = result.replace(/Изучила вашу компанию\s*«\s*»\s*и заметила/g, 'Изучила вашу компанию и заметила')
   result = result.replace(/\n{3,}/g, '\n\n')
 
   return result.trimEnd()

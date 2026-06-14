@@ -105,6 +105,7 @@ export function buildMessageSignature(sender: SenderProfile): string {
     ['Telegram', sender.telegram],
     ['VK', sender.vk],
     ['Email', sender.email],
+    ['Сайт', sender.website],
     ['Портфолио', sender.portfolio],
   ]
 

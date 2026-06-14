@@ -63,16 +63,37 @@ export function isFallbackLeadName(
   return sources.some((src) => trimmed === buildFallbackLeadName(src, niche))
 }
 
+export function isLegacyAvitoLeadName(name: string): boolean {
+  return /^Авито\s*[—\-–]/i.test(name.trim())
+}
+
+export function isLegacyGenericCompanyName(name: string): boolean {
+  return /^Компания\b/i.test(name.trim())
+}
+
+export function isTechnicalLeadName(
+  name: string | undefined | null,
+  lead?: Pick<Lead, 'source' | 'niche'>,
+): boolean {
+  const trimmed = name?.trim() ?? ''
+  if (!trimmed) return true
+  if (/^(undefined|null)$/i.test(trimmed)) return true
+  if (isLegacyItemLeadName(trimmed)) return true
+  if (looksLikeUrl(trimmed)) return true
+  if (isLegacyYandexMapsLeadName(trimmed)) return true
+  if (isLegacyAvitoLeadName(trimmed)) return true
+  if (isLegacyGenericCompanyName(trimmed)) return true
+  if (isFallbackLeadName(trimmed, lead?.niche, lead?.source)) return true
+  return false
+}
+
 export function sanitizeLeadName(
   name: string | undefined | null,
   lead?: Pick<Lead, 'source' | 'niche'>,
 ): string | null {
   const trimmed = name?.trim() ?? ''
-  if (!trimmed) return null
-  if (/^(undefined|null)$/i.test(trimmed)) return null
-  if (isPlaceholderLeadName(trimmed)) return null
-  if (isFallbackLeadName(trimmed, lead?.niche, lead?.source)) return null
-  return trimmed
+  if (isTechnicalLeadName(trimmed, lead)) return null
+  return trimmed || null
 }
 
 /** @deprecated Используйте sanitizeLeadName */
@@ -83,12 +104,7 @@ export function resolveLeadNameForOutreach(
 }
 
 export function isPlaceholderLeadName(name: string | undefined | null): boolean {
-  const trimmed = name?.trim() ?? ''
-  if (!trimmed) return true
-  if (isLegacyItemLeadName(trimmed)) return true
-  if (looksLikeUrl(trimmed)) return true
-  if (isLegacyYandexMapsLeadName(trimmed)) return true
-  return false
+  return isTechnicalLeadName(name)
 }
 
 export function isLegacyItemLeadName(name: string): boolean {
@@ -130,20 +146,47 @@ export function fixLegacyLeadName(
     }
   }
 
-  const sourceLink = sourceUrl || website
-  const isAvitoLead =
-    source === 'avito' || Boolean(sourceLink && sourceLink.toLowerCase().includes('avito'))
+  if (isLegacyYandexMapsLeadName(name)) {
+    source = source === 'other' || source === 'company_site' ? 'yandex_maps' : source
+    name = buildFallbackLeadName('yandex_maps', niche)
+    return { name, sourceUrl, website, contacts, source }
+  }
 
-  if (isLegacyItemLeadName(name) && isAvitoLead) {
+  if (isLegacyAvitoLeadName(name)) {
     source = 'avito'
     name = buildFallbackLeadName('avito', niche)
     return { name, sourceUrl, website, contacts, source }
   }
 
-  if (isLegacyYandexMapsLeadName(name)) {
-    source = source === 'other' || source === 'company_site' ? 'yandex_maps' : source
-    name = buildFallbackLeadName('yandex_maps', niche)
-    return { name, sourceUrl, website, contacts, source }
+  const sourceLink = sourceUrl || website
+
+  if (isLegacyItemLeadName(name)) {
+    const detected = sourceLink
+      ? detectSourceFromUrl(sourceLink, source)
+      : source
+    const resolvedSource =
+      detected !== 'other' && detected !== 'company_site' && detected !== 'telegram'
+        ? detected
+        : sourceLink?.toLowerCase().includes('yandex')
+          ? 'yandex_maps'
+          : sourceLink?.toLowerCase().includes('avito')
+            ? 'avito'
+            : sourceLink?.toLowerCase().includes('2gis')
+              ? '2gis'
+              : sourceLink && isVkUrl(sourceLink)
+                ? 'vk'
+                : source
+
+    if (
+      resolvedSource === 'avito' ||
+      resolvedSource === 'yandex_maps' ||
+      resolvedSource === '2gis' ||
+      resolvedSource === 'vk'
+    ) {
+      source = resolvedSource
+      name = buildFallbackLeadName(resolvedSource, niche)
+      return { name, sourceUrl, website, contacts, source }
+    }
   }
 
   return { name, sourceUrl, website, contacts, source }
