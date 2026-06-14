@@ -43,6 +43,32 @@ export function detectSourceFromUrl(url: string, fallback: LeadSource): LeadSour
   return fallback
 }
 
+export function isPlaceholderLeadName(name: string | undefined | null): boolean {
+  const trimmed = name?.trim() ?? ''
+  if (!trimmed) return true
+  if (isLegacyItemLeadName(trimmed)) return true
+  if (looksLikeUrl(trimmed)) return true
+  if (isLegacyYandexMapsLeadName(trimmed)) return true
+  return false
+}
+
+export function resolveLeadNameForOutreach(
+  lead: Pick<Lead, 'name' | 'niche' | 'source' | 'sourceUrl' | 'website' | 'contacts'>,
+): string | null {
+  const raw = lead.name?.trim() ?? ''
+  if (!isPlaceholderLeadName(raw)) {
+    return raw
+  }
+
+  const fixed = fixLegacyLeadName(lead)
+  const normalized = fixed.name.trim()
+  if (normalized && !isPlaceholderLeadName(normalized)) {
+    return normalized
+  }
+
+  return null
+}
+
 export function isLegacyItemLeadName(name: string): boolean {
   return /^Item\s+\d+/i.test(name.trim())
 }

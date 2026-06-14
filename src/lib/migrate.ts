@@ -1,4 +1,4 @@
-import type { AppSettings, Lead } from '@/domain/lead'
+import type { AppProfile, AppSettings, Lead } from '@/domain/lead'
 import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
 import { resolveLeadSource } from './leadSources'
 import { normalizeNicheName } from './nicheDisplay'
@@ -190,6 +190,36 @@ function migrateLeadsNamesV12(): void {
   setStorageItem(STORAGE_KEYS.LEADS, migrated)
 }
 
+function migrateSettingsProfileV13(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  const raw = settings.profile as Partial<AppProfile>
+  let name = raw.name?.trim() ?? ''
+  let lastName = raw.lastName?.trim() ?? ''
+
+  if (!lastName && name.includes(' ')) {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      name = parts[0]
+      lastName = parts.slice(1).join(' ')
+    }
+  }
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    profile: normalizeAppProfile(
+      {
+        ...raw,
+        name,
+        lastName,
+        portfolio: raw.portfolio ?? '',
+      },
+      createDefaultAppProfile(),
+    ),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -232,6 +262,10 @@ export function runMigrations(): void {
 
   if (current < 12) {
     migrateLeadsNamesV12()
+  }
+
+  if (current < 13) {
+    migrateSettingsProfileV13()
   }
 
   if (current < SCHEMA_VERSION) {

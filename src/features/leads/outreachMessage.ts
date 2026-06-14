@@ -1,17 +1,28 @@
 import type { ImprovementOpportunity, Lead } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
+import { resolveLeadNameForOutreach } from '@/lib/leadLinks'
 import {
   DEFAULT_SENDER_PROFILE,
   OUTREACH_SENDER,
   buildMessageSignature,
+  getSenderDisplayName,
   getSenderProfile,
   type SenderProfile,
 } from '@/lib/senderProfile'
 import type { AppProfile } from '@/domain/lead'
 
-export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature }
+export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName }
+export { resolveLeadNameForOutreach } from '@/lib/leadLinks'
 export type { SenderProfile }
+
+export function formatOutreachCompanyPhrase(lead: Lead): string {
+  const name = resolveLeadNameForOutreach(lead)
+  if (name) {
+    return `Изучила вашу компанию «${name}» и заметила несколько точек роста:`
+  }
+  return 'Изучила вашу компанию и заметила несколько точек роста:'
+}
 
 function getOpportunityPitch(key: ImprovementOpportunity): string {
   return ru.opportunityPitches[key]
@@ -48,13 +59,6 @@ export function collectOutreachBullets(lead: Lead): string[] {
   return getNicheOutreachRecommendations(lead.niche).slice(0, 4)
 }
 
-function formatCompanyContext(lead: Lead): string {
-  if (lead.name) {
-    return `вашу компанию «${lead.name}»`
-  }
-  return 'вашу компанию'
-}
-
 export function buildOutreachMessage(
   lead: Lead,
   senderInput?: Partial<AppProfile> | SenderProfile,
@@ -65,15 +69,15 @@ export function buildOutreachMessage(
 
   const bullets = collectOutreachBullets(lead)
   const bulletBlock = bullets.map((b) => `• ${b}`).join('\n')
-  const companyContext = formatCompanyContext(lead)
+  const companyPhrase = formatOutreachCompanyPhrase(lead)
   const signature = buildMessageSignature(sender)
-  const name = sender.name.trim() || DEFAULT_SENDER_PROFILE.name
+  const displayName = getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
   const specialization = sender.specialization.trim() || DEFAULT_SENDER_PROFILE.specialization
 
   return `Здравствуйте!
-Меня зовут ${name}.
+Меня зовут ${displayName}.
 Я занимаюсь ${specialization}.
-Изучила ${companyContext} и заметила несколько точек роста:
+${companyPhrase}
 ${bulletBlock}
 Эти моменты могут снижать количество обращений и доверие клиентов.
 Могу показать конкретные варианты улучшений и примеры решений.

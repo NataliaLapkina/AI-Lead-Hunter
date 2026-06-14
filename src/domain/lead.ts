@@ -128,6 +128,7 @@ export interface AnalyticsSummary {
 
 export interface AppProfile {
   name: string
+  lastName: string
   businessType: string
   specialization: string
   phone: string
@@ -136,6 +137,7 @@ export interface AppProfile {
   vk: string
   email: string
   website: string
+  portfolio: string
 }
 
 export interface AppIntegrations {

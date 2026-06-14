@@ -27,7 +27,7 @@ import { downloadBlob } from '@/lib/utils'
 import { ru, getNicheLabel } from '@/i18n/ru'
 import { toast } from 'sonner'
 import type { AppProfile } from '@/domain/lead'
-import { createDefaultAppProfile } from '@/lib/senderProfile'
+import { createDefaultAppProfile, buildMessageSignature, getSenderProfile } from '@/lib/senderProfile'
 
 export function SettingsPage() {
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
@@ -143,17 +143,27 @@ export function SettingsPage() {
         <div className="mx-auto max-w-2xl space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{ru.settings.profile}</CardTitle>
+              <CardTitle className="text-base">{ru.settings.myContacts}</CardTitle>
               <CardDescription>{ru.settings.profileDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="profile-name">{ru.settings.profileName}</Label>
-                <Input
-                  id="profile-name"
-                  value={profile.name}
-                  onChange={(e) => updateProfileField('name', e.target.value)}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-name">{ru.settings.profileName}</Label>
+                  <Input
+                    id="profile-name"
+                    value={profile.name}
+                    onChange={(e) => updateProfileField('name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-last-name">{ru.settings.profileLastName}</Label>
+                  <Input
+                    id="profile-last-name"
+                    value={profile.lastName}
+                    onChange={(e) => updateProfileField('lastName', e.target.value)}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-specialization">{ru.settings.profileSpecialization}</Label>
@@ -226,13 +236,21 @@ export function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="profile-business">{ru.settings.profileBusiness}</Label>
+                <Label htmlFor="profile-portfolio">{ru.settings.profilePortfolio}</Label>
                 <Input
-                  id="profile-business"
-                  value={profile.businessType}
-                  onChange={(e) => updateProfileField('businessType', e.target.value)}
-                  placeholder={ru.settings.profileBusinessPlaceholder}
+                  id="profile-portfolio"
+                  value={profile.portfolio}
+                  onChange={(e) => updateProfileField('portfolio', e.target.value)}
+                  placeholder="https://..."
                 />
+              </div>
+              <div className="space-y-2 rounded-lg border bg-muted/40 p-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {ru.settings.profileSignaturePreview}
+                </p>
+                <pre className="whitespace-pre-wrap text-sm font-sans">
+                  {buildMessageSignature(getSenderProfile(profile))}
+                </pre>
               </div>
               <Button onClick={handleSaveProfile}>{ru.common.save}</Button>
             </CardContent>
