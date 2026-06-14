@@ -81,9 +81,12 @@ describe('buildReviewRequestTemplate', () => {
 
     expect(text.startsWith('Здравствуйте!')).toBe(true)
     expect(text).toContain('Спасибо за сотрудничество.')
-    expect(text).toContain('• рекомендовали бы нас другим.')
+    expect(text).toContain('о моей работе')
+    expect(text).toContain('• порекомендовали бы меня другим.')
     expect(text).not.toContain('Мебельщик из Яндекс Карт')
     expect(text).not.toContain('Изучила вашу компанию')
+    expect(text.toLowerCase()).not.toContain('нашей работе')
+    expect(text.toLowerCase()).not.toContain('рекомендовали бы нас')
   })
 })
 

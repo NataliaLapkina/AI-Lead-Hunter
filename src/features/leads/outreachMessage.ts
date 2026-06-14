@@ -12,6 +12,7 @@ import {
   stripMessageSignature,
   type SenderProfile,
 } from '@/lib/senderProfile'
+import { normalizePersonalVoice } from '@/lib/personalMessageVoice'
 
 export { OUTREACH_SENDER, getSenderProfile, buildSenderSignature, getSenderDisplayName, resolveOutreachProfile }
 export { buildSenderSignature as buildMessageSignature } from '@/lib/senderProfile'
@@ -85,9 +86,10 @@ export function finalizeOutreachMessage(
 ): string {
   const body = stripMessageSignature(message)
   const scrubbedBody = scrubTechnicalLeadNamesFromMessage(body, lead)
+  const voicedBody = normalizePersonalVoice(scrubbedBody, senderProfile)
   const signature = buildSenderSignature(senderProfile)
-  if (!scrubbedBody) return signature
-  return `${scrubbedBody}\n${signature}`
+  if (!voicedBody) return signature
+  return `${voicedBody}\n${signature}`
 }
 
 function getOpportunityPitch(key: ImprovementOpportunity): string {
