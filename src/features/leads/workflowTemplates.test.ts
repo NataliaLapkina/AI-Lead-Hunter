@@ -4,6 +4,7 @@ import {
   buildProposalTemplate,
   buildReviewRequestTemplate,
   getWorkflowCompanyName,
+  PROPOSAL_FORBIDDEN_PHRASES,
 } from './workflowTemplates'
 import { buildOutreachMessage } from './outreachMessage'
 
@@ -48,16 +49,20 @@ describe('getWorkflowCompanyName', () => {
 })
 
 describe('buildProposalTemplate', () => {
-  it('includes company name and proposal bullets', () => {
+  it('writes in first person feminine without CRM fields', () => {
     const text = buildProposalTemplate(createLead(), profile)
 
-    expect(text).toContain('Коммерческое предложение для компании «Мебельщик из Яндекс Карт»')
-    expect(text).toContain('Ниша: Мебельщик')
-    expect(text).toContain('Город: Москва')
-    expect(text).toContain('• Разработку современного сайта')
-    expect(text).toContain('Сроки: по согласованию')
+    expect(text).toContain('Я изучила компанию «Мебельщик из Яндекс Карт»')
+    expect(text).toContain('подготовила')
+    expect(text).toContain('Предлагаю:')
+    expect(text).toContain('буду рада')
+    expect(text).toContain('• разработать современный сайт;')
+    expect(text).toContain('Наталья Лапкина')
+
+    for (const phrase of PROPOSAL_FORBIDDEN_PHRASES) {
+      expect(text.toLowerCase()).not.toContain(phrase.toLowerCase())
+    }
     expect(text).not.toContain('Изучила вашу компанию')
-    expect(text).not.toContain('точек роста:')
   })
 
   it('normalizes email in signature and skips empty contacts', () => {

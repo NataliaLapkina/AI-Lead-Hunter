@@ -1,5 +1,4 @@
 import type { AppProfile, Lead } from '@/domain/lead'
-import { getNicheLabel } from '@/i18n/ru'
 import { buildSenderSignature } from '@/lib/senderProfile'
 
 /** Название компании для КП — только lead.name, без outreach/audit. */
@@ -10,27 +9,23 @@ export function getWorkflowCompanyName(lead: Lead): string {
 
 export function buildProposalTemplate(lead: Lead, profile?: AppProfile | null): string {
   const companyName = getWorkflowCompanyName(lead)
-  const niche = getNicheLabel(lead.niche)
   const signature = buildSenderSignature(profile)
 
   return [
-    `Коммерческое предложение для компании «${companyName}»`,
+    'Здравствуйте!',
     '',
-    `Ниша: ${niche}`,
-    lead.city?.trim() ? `Город: ${lead.city.trim()}` : null,
+    `Я изучила компанию «${companyName}» и подготовила для вас персональное предложение.`,
     '',
-    'Предлагаем:',
-    '• Анализ текущего сайта и точек роста',
-    '• Разработку современного сайта',
-    '• Автоматизацию заявок',
-    '• AI-инструменты для работы с клиентами',
+    'Предлагаю:',
+    '• провести анализ текущего сайта и выявить точки роста;',
+    '• разработать современный сайт;',
+    '• автоматизировать обработку заявок;',
+    '• внедрить AI-инструменты для работы с клиентами.',
     '',
-    'Сроки: по согласованию',
+    'Сроки обсудим индивидуально — буду рада подстроиться под ваши задачи.',
     '',
     signature,
-  ]
-    .filter((line) => line !== null && line !== '')
-    .join('\n')
+  ].join('\n')
 }
 
 export function buildReviewRequestTemplate(_lead: Lead, profile?: AppProfile | null): string {
@@ -50,3 +45,14 @@ export function buildReviewRequestTemplate(_lead: Lead, profile?: AppProfile | n
     signature,
   ].join('\n')
 }
+
+/** Запрещённые формулировки в клиентском КП (корпоративный стиль / служебные поля). */
+export const PROPOSAL_FORBIDDEN_PHRASES = [
+  'Ниша:',
+  'Город:',
+  'Предлагаем:',
+  'наша компания',
+  'наши специалисты',
+  'мы предлагаем',
+  'Коммерческое предложение для компании',
+] as const
