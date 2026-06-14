@@ -4,6 +4,7 @@ import { resolveLeadSource } from '@/lib/leadSources'
 import { getNicheLabel } from '@/i18n/ru'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { migrateLegacyContacts } from '@/lib/leadContacts'
+import { isSourcePlatformUrl } from '@/lib/leadLinks'
 
 export const SHEET_HEADERS = [
   'id',
@@ -12,8 +13,9 @@ export const SHEET_HEADERS = [
   'city',
   'source',
   'website',
+  'sourceUrl',
   'email',
-  'whatsapp',
+  'phone',
   'telegram',
   'vk',
   'status',
@@ -33,8 +35,9 @@ export function leadToSheetRow(lead: Lead): string[] {
     lead.city,
     lead.source,
     lead.website ?? '',
+    lead.sourceUrl ?? '',
     lead.contacts.email ?? '',
-    lead.contacts.whatsapp ?? '',
+    lead.contacts.phone ?? '',
     lead.contacts.telegram ?? '',
     lead.contacts.vk ?? '',
     lead.status,
@@ -47,11 +50,15 @@ export function leadToSheetRow(lead: Lead): string[] {
   ]
 }
 
+function isNewFormatRow(row: string[]): boolean {
+  return row.length >= 18 || Boolean(row[6]?.includes('.'))
+}
+
 export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
   if (!row[0]?.trim()) return null
 
-  const isLegacyRow = row.length <= 16 && LEAD_STATUSES.includes(row[9] as LeadStatus)
-  const statusIndex = isLegacyRow ? 9 : 10
+  const newFormat = isNewFormatRow(row)
+  const statusIndex = newFormat ? 11 : 9
   const status = row[statusIndex] as LeadStatus
   const source = resolveLeadSource(row[4])
 
@@ -59,7 +66,7 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
     return null
   }
 
-  const opportunitiesIndex = isLegacyRow ? 11 : 12
+  const opportunitiesIndex = newFormat ? 13 : 11
   const opportunities = (row[opportunitiesIndex] ?? '')
     .split(';')
     .filter(Boolean)
@@ -69,17 +76,25 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
 
   const now = new Date().toISOString()
 
-  const contacts = isLegacyRow
+  let website = row[5] || undefined
+  let sourceUrl = newFormat ? row[6] || undefined : undefined
+
+  if (!newFormat && website && isSourcePlatformUrl(website)) {
+    sourceUrl = website
+    website = undefined
+  }
+
+  const contacts = newFormat
     ? migrateLegacyContacts({
+        email: row[7] || undefined,
+        phone: row[8] || undefined,
+        telegram: row[9] || undefined,
+        vk: row[10] || undefined,
+      })
+    : migrateLegacyContacts({
         emails: (row[6] ?? '').split(';').filter(Boolean),
         phones: (row[7] ?? '').split(';').filter(Boolean),
         telegram: row[8] || undefined,
-      })
-    : migrateLegacyContacts({
-        email: row[6] || undefined,
-        whatsapp: row[7] || undefined,
-        telegram: row[8] || undefined,
-        vk: row[9] || undefined,
       })
 
   return {
@@ -88,16 +103,17 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
     niche: normalizeNicheName(row[2] ?? ''),
     city: row[3] ?? '',
     source,
-    website: row[5] || undefined,
+    website,
+    sourceUrl,
     contacts,
     status,
-    tags: (row[isLegacyRow ? 10 : 11] ?? '').split(';').filter(Boolean),
+    tags: (row[newFormat ? 12 : 10] ?? '').split(';').filter(Boolean),
     opportunities,
-    notes: row[isLegacyRow ? 12 : 13] ?? '',
-    generatedMessage: row[isLegacyRow ? 13 : 14] || undefined,
+    notes: row[newFormat ? 14 : 12] ?? '',
+    generatedMessage: row[newFormat ? 15 : 13] || undefined,
     comments: [],
-    createdAt: row[isLegacyRow ? 14 : 15] || now,
-    updatedAt: row[isLegacyRow ? 15 : 16] || now,
+    createdAt: row[newFormat ? 16 : 14] || now,
+    updatedAt: row[newFormat ? 17 : 15] || now,
     activityLog: [],
     sheetsRowIndex: rowIndex,
   }

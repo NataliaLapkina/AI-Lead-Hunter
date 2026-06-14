@@ -10,6 +10,7 @@ import {
   normalizeNichePresets,
 } from './nichePresets'
 import { migrateLegacyContacts } from './leadContacts'
+import { isSourcePlatformUrl, splitWebsiteAndSourceUrl } from './leadLinks'
 import { getStorageItem, setStorageItem, getSchemaVersion, setSchemaVersion } from './storage'
 
 function migrateSettingsPresetsV2(): void {
@@ -140,6 +141,35 @@ function migrateLeadsContactsV10(): void {
   setStorageItem(STORAGE_KEYS.LEADS, migrated)
 }
 
+function migrateLeadsLinksV11(): void {
+  const leads = getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+  if (leads.length === 0) return
+
+  const migrated = leads.map((lead) => {
+    const legacyWebsite = lead.website
+    const existingSourceUrl = (lead as Lead & { sourceUrl?: string }).sourceUrl
+
+    let sourceUrl = existingSourceUrl
+    let website = legacyWebsite
+
+    if (!sourceUrl && legacyWebsite && isSourcePlatformUrl(legacyWebsite)) {
+      sourceUrl = legacyWebsite
+      website = undefined
+    }
+
+    const split = splitWebsiteAndSourceUrl(website, sourceUrl)
+
+    return {
+      ...lead,
+      website: split.website,
+      sourceUrl: split.sourceUrl,
+      contacts: migrateLegacyContacts(lead.contacts),
+    }
+  })
+
+  setStorageItem(STORAGE_KEYS.LEADS, migrated)
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -174,6 +204,10 @@ export function runMigrations(): void {
 
   if (current < 10) {
     migrateLeadsContactsV10()
+  }
+
+  if (current < 11) {
+    migrateLeadsLinksV11()
   }
 
   if (current < SCHEMA_VERSION) {

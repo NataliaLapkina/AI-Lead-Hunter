@@ -26,8 +26,8 @@ export function resolveVkUrl(value: string): string {
   return ensureHttpUrl(`vk.com/${trimmed.replace(/^@/, '')}`)
 }
 
-export function getLeadWhatsApp(lead: Lead): string | null {
-  return lead.contacts.whatsapp?.trim() || null
+export function getLeadPhone(lead: Lead): string | null {
+  return lead.contacts.phone?.trim() || null
 }
 
 export function getLeadTelegramUrl(lead: Lead): string | null {

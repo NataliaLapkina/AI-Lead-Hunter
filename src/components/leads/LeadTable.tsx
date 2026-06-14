@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getStatusLabel } from '@/i18n/ru'
-import { ExternalLink } from 'lucide-react'
+import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
 
 interface LeadTableProps {
   leads: Lead[]
@@ -48,18 +48,7 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
               >
                 <td className="px-4 py-3">
                   <div className="font-medium">{lead.name}</div>
-                  {lead.website && (
-                    <a
-                      href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-0.5 flex items-center gap-1 text-xs text-primary hover:underline"
-                    >
-                      {lead.website.replace(/^https?:\/\//, '')}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                  <LeadSourceLink lead={lead} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{getNicheLabel(lead.niche)}</td>
                 <td className="px-4 py-3 text-muted-foreground">{lead.city || '—'}</td>
@@ -118,42 +107,47 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
       {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {leads.map((lead) => (
-          <button
+          <div
             key={lead.id}
-            type="button"
-            onClick={() => onRowClick(lead.id)}
-            className="w-full rounded-xl border bg-card p-4 text-left transition-colors hover:bg-muted/30"
+            className="rounded-xl border bg-card p-4"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-medium">{lead.name}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {getNicheLabel(lead.niche)}
-                  {lead.city && ` · ${lead.city}`}
-                </p>
+            <button
+              type="button"
+              onClick={() => onRowClick(lead.id)}
+              className="w-full text-left transition-colors hover:opacity-90"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{lead.name}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {getNicheLabel(lead.niche)}
+                    {lead.city && ` · ${lead.city}`}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <LeadStatusBadge status={lead.status} />
+                  {(lead.opportunities?.length ?? 0) > 0 && (
+                    <Badge variant="warning" className="text-xs">
+                      {lead.opportunities!.length} улуч.
+                    </Badge>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <LeadStatusBadge status={lead.status} />
-                {(lead.opportunities?.length ?? 0) > 0 && (
-                  <Badge variant="warning" className="text-xs">
-                    {lead.opportunities!.length} улуч.
-                  </Badge>
-                )}
-              </div>
-            </div>
-            {lead.tags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1">
-                {lead.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            <p className="mt-2 text-xs text-muted-foreground">
-              {formatDate(lead.createdAt)}
-            </p>
-          </button>
+              {lead.tags.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {lead.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatDate(lead.createdAt)}
+              </p>
+            </button>
+            <LeadSourceLink lead={lead} className="px-0 pt-2" />
+          </div>
         ))}
       </div>
     </>

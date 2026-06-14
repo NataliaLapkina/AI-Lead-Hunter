@@ -3,7 +3,7 @@ import { AUTO_SEARCH_SOURCES, LEAD_SOURCES, LEAD_STATUSES, IMPROVEMENT_OPPORTUNI
 
 export const leadContactsSchema = z.object({
   email: z.string().optional(),
-  whatsapp: z.string().optional(),
+  phone: z.string().optional(),
   telegram: z.string().optional(),
   vk: z.string().optional(),
 })
@@ -13,7 +13,8 @@ export const createLeadSchema = z.object({
   niche: z.string().min(1, 'Укажите нишу'),
   city: z.string().default(''),
   source: z.enum(LEAD_SOURCES),
-  website: z.string().url('Некорректный URL сайта').optional().or(z.literal('')),
+  website: z.string().optional(),
+  sourceUrl: z.string().optional(),
   contacts: leadContactsSchema,
   notes: z.string().default(''),
   tags: z.array(z.string()).default([]),

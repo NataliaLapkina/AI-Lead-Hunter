@@ -51,8 +51,9 @@ export function LeadForm({
   const [city, setCity] = useState('')
   const [source, setSource] = useState<CreateLeadInput['source']>('other')
   const [website, setWebsite] = useState('')
+  const [sourceUrl, setSourceUrl] = useState('')
   const [email, setEmail] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
+  const [phone, setPhone] = useState('')
   const [telegram, setTelegram] = useState('')
   const [vk, setVk] = useState('')
   const [notes, setNotes] = useState('')
@@ -71,8 +72,9 @@ export function LeadForm({
         setCity(lead.city)
         setSource(lead.source)
         setWebsite(lead.website ?? '')
+        setSourceUrl(lead.sourceUrl ?? '')
         setEmail(lead.contacts.email ?? '')
-        setWhatsapp(lead.contacts.whatsapp ?? '')
+        setPhone(lead.contacts.phone ?? '')
         setTelegram(lead.contacts.telegram ?? '')
         setVk(lead.contacts.vk ?? '')
         setNotes(lead.notes)
@@ -84,8 +86,9 @@ export function LeadForm({
         setCity(initialValues?.city ?? '')
         setSource(initialValues?.source ?? 'other')
         setWebsite(initialValues?.website ?? '')
+        setSourceUrl(initialValues?.sourceUrl ?? '')
         setEmail(initialValues?.contacts?.email ?? '')
-        setWhatsapp(initialValues?.contacts?.whatsapp ?? '')
+        setPhone(initialValues?.contacts?.phone ?? '')
         setTelegram(initialValues?.contacts?.telegram ?? '')
         setVk(initialValues?.contacts?.vk ?? '')
         setNotes(initialValues?.notes ?? '')
@@ -112,7 +115,7 @@ export function LeadForm({
   const buildContacts = () => ({
     ...createEmptyContacts(),
     email: email || undefined,
-    whatsapp: whatsapp || undefined,
+    phone: phone || undefined,
     telegram: telegram || undefined,
     vk: vk || undefined,
   })
@@ -135,6 +138,7 @@ export function LeadForm({
       city,
       source,
       website: website || undefined,
+      sourceUrl: sourceUrl || undefined,
       contacts: buildContacts(),
       notes,
       tags,
@@ -230,6 +234,15 @@ export function LeadForm({
           <div className="space-y-4">
             <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
             <div className="space-y-2">
+              <Label htmlFor="source-url">{ru.leads.formSourceUrl}</Label>
+              <Input
+                id="source-url"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder={ru.leads.formSourceUrlPlaceholder}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="website">{ru.leads.formWebsite}</Label>
               <Input
                 id="website"
@@ -254,11 +267,11 @@ export function LeadForm({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="whatsapp">{ru.leads.formWhatsapp}</Label>
+                <Label htmlFor="phone">{ru.leads.formPhone}</Label>
                 <Input
-                  id="whatsapp"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder="+7 ..."
                 />
               </div>

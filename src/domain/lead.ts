@@ -65,7 +65,7 @@ export interface SiteAuditResult {
 
 export interface LeadContacts {
   email?: string
-  whatsapp?: string
+  phone?: string
   telegram?: string
   vk?: string
 }
@@ -84,6 +84,7 @@ export interface Lead {
   city: string
   source: LeadSource
   website?: string
+  sourceUrl?: string
   contacts: LeadContacts
   notes: string
   aiRecommendations?: string
@@ -176,6 +177,7 @@ export interface CreateLeadInput {
   city: string
   source: LeadSource
   website?: string
+  sourceUrl?: string
   contacts: LeadContacts
   notes: string
   tags: string[]
@@ -206,6 +208,7 @@ export interface AutoSearchDraftLead {
   city: string
   source: LeadSource
   website?: string
+  sourceUrl?: string
   contacts: LeadContacts
   opportunities: ImprovementOpportunity[]
   generatedMessage: string

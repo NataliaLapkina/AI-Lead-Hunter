@@ -135,7 +135,15 @@ export function AutoSearchDraftSheet({
           <div className="space-y-4">
             <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
             <div className="space-y-2">
-              <Label htmlFor="draft-website">{ru.common.website}</Label>
+              <Label htmlFor="draft-source-url">{ru.leads.formSourceUrl}</Label>
+              <Input
+                id="draft-source-url"
+                value={form.sourceUrl ?? ''}
+                onChange={(e) => setForm({ ...form, sourceUrl: e.target.value || undefined })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="draft-website">{ru.leads.formWebsite}</Label>
               <Input
                 id="draft-website"
                 value={form.website ?? ''}
@@ -158,14 +166,14 @@ export function AutoSearchDraftSheet({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="draft-whatsapp">{ru.leads.formWhatsapp}</Label>
+                <Label htmlFor="draft-phone">{ru.leads.formPhone}</Label>
                 <Input
-                  id="draft-whatsapp"
-                  value={form.contacts.whatsapp ?? ''}
+                  id="draft-phone"
+                  value={form.contacts.phone ?? ''}
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      contacts: { ...form.contacts, whatsapp: e.target.value || undefined },
+                      contacts: { ...form.contacts, phone: e.target.value || undefined },
                     })
                   }
                 />

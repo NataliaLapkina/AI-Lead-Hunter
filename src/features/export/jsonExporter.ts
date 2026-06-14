@@ -2,6 +2,7 @@ import type { Lead, ImportResult } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
 import { resolveLeadSource } from '@/lib/leadSources'
 import { migrateLegacyContacts } from '@/lib/leadContacts'
+import { splitWebsiteAndSourceUrl } from '@/lib/leadLinks'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { generateId } from '@/lib/utils'
 
@@ -40,6 +41,7 @@ function isValidLead(obj: unknown): obj is Lead {
 function normalizeImportedLead(raw: Lead): Lead {
   const now = new Date().toISOString()
   const legacy = raw.contacts as { linkedin?: string } | undefined
+  const links = splitWebsiteAndSourceUrl(raw.website, raw.sourceUrl)
 
   return {
     ...raw,
@@ -51,6 +53,8 @@ function normalizeImportedLead(raw: Lead): Lead {
     comments: raw.comments ?? [],
     source: resolveLeadSource(raw.source),
     niche: normalizeNicheName(raw.niche),
+    website: links.website,
+    sourceUrl: links.sourceUrl,
     contacts: migrateLegacyContacts({
       ...raw.contacts,
       telegram: raw.contacts?.telegram ?? legacy?.linkedin,

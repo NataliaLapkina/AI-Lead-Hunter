@@ -5,7 +5,7 @@ import {
   getLeadEmail,
   getLeadTelegramUrl,
   getLeadVkUrl,
-  getLeadWhatsApp,
+  getLeadPhone,
   openExternalUrl,
 } from '@/lib/outreachChannels'
 import { ru } from '@/i18n/ru'
@@ -45,14 +45,14 @@ function ContactButton({
 }
 
 export function LeadOutreachActions({ lead, message }: LeadOutreachActionsProps) {
-  const whatsapp = getLeadWhatsApp(lead)
+  const phone = getLeadPhone(lead)
   const telegramUrl = getLeadTelegramUrl(lead)
   const vkUrl = getLeadVkUrl(lead)
   const email = getLeadEmail(lead)
 
   const handleWhatsApp = () => {
-    if (!whatsapp) return
-    openExternalUrl(buildWhatsAppUrl(whatsapp, message))
+    if (!phone) return
+    openExternalUrl(buildWhatsAppUrl(phone, message))
   }
 
   const handleTelegram = () => {
@@ -75,7 +75,7 @@ export function LeadOutreachActions({ lead, message }: LeadOutreachActionsProps)
       <ContactButton
         label={ru.leads.openWhatsApp}
         icon={MessageCircle}
-        enabled={Boolean(whatsapp)}
+        enabled={Boolean(phone)}
         onClick={handleWhatsApp}
       />
       <ContactButton

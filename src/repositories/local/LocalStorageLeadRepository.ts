@@ -70,7 +70,7 @@ export class LocalStorageLeadRepository implements ILeadRepository {
           l.city.toLowerCase().includes(q) ||
           l.website?.toLowerCase().includes(q) ||
           l.contacts.email?.toLowerCase().includes(q) ||
-          l.contacts.whatsapp?.toLowerCase().includes(q) ||
+          l.contacts.phone?.toLowerCase().includes(q) ||
           l.contacts.telegram?.toLowerCase().includes(q) ||
           l.contacts.vk?.toLowerCase().includes(q) ||
           l.tags.some((t) => t.toLowerCase().includes(q)),

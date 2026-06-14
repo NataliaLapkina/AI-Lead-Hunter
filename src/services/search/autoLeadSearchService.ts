@@ -9,6 +9,7 @@ import type {
 import { buildOutreachMessage } from '@/features/leads/outreachMessage'
 import { suggestOpportunitiesFromLead } from '@/features/leads/improvements'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
+import { buildFallbackLeadName, normalizeExternalUrl } from '@/lib/leadLinks'
 import { generateId } from '@/lib/utils'
 
 const URL_SPLIT = /[\n,;\s]+/
@@ -49,70 +50,17 @@ export function detectSourceFromUrl(url: string, fallback: LeadSource): LeadSour
   return fallback
 }
 
-function slugToTitle(slug: string): string {
-  const decoded = decodeURIComponent(slug)
-    .replace(/[_+]/g, ' ')
-    .replace(/-/g, ' ')
-    .replace(/\?.*$/, '')
-    .trim()
-  if (!decoded) return ''
-  return decoded.charAt(0).toLocaleUpperCase('ru-RU') + decoded.slice(1)
-}
-
-export function extractCompanyNameFromUrl(url: string, index: number, niche: string): string {
-  try {
-    const parsed = new URL(url)
-    const segments = parsed.pathname.split('/').filter(Boolean)
-    const host = parsed.hostname.replace(/^www\./, '')
-
-    if (host.includes('avito.ru') && segments.length >= 2) {
-      const name = slugToTitle(segments[segments.length - 1])
-      if (name.length > 2) return name
-    }
-
-    if (host.includes('vk.com') || host.includes('vk.ru')) {
-      const id = segments[0] ?? ''
-      if (id.startsWith('club') || id.startsWith('public')) {
-        return slugToTitle(id.replace(/^(club|public)/, '')) || `VK — ${niche} ${index + 1}`
-      }
-      return slugToTitle(id) || `VK — ${niche} ${index + 1}`
-    }
-
-    if (host.includes('2gis')) {
-      const name = slugToTitle(segments[segments.length - 1] ?? '')
-      if (name.length > 2) return name
-      return `2ГИС — ${niche} ${index + 1}`
-    }
-
-    if (host.includes('yandex')) {
-      const name = slugToTitle(segments[segments.length - 1] ?? '')
-      if (name.length > 2) return name
-      return `Яндекс Карты — ${niche} ${index + 1}`
-    }
-
-    const last = slugToTitle(segments[segments.length - 1] ?? '')
-    if (last.length > 2) return last
-  } catch {
-    /* ignore invalid URL */
-  }
-
-  return `${normalizeNicheName(niche)} — профиль ${index + 1}`
-}
-
 function mockContactsForIndex(index: number): LeadContacts {
   const contacts: LeadContacts = {}
 
   if (index % 2 === 0) {
-    contacts.whatsapp = `+7 (9${String(10 + (index % 8)).padStart(2, '0')}) ${100 + index}-${20 + index}-${30 + index}`
+    contacts.phone = `+7 (9${String(10 + (index % 8)).padStart(2, '0')}) ${100 + index}-${20 + index}-${30 + index}`
   }
   if (index % 3 === 0) {
     contacts.email = `info${index + 1}@example.com`
   }
   if (index % 4 !== 1) {
     contacts.telegram = `https://t.me/lead_${index + 1}`
-  }
-  if (index % 5 === 0) {
-    contacts.vk = `https://vk.com/lead_${index + 1}`
   }
 
   return contacts
@@ -136,6 +84,35 @@ function buildMockUrl(source: AutoSearchSource, niche: string, city: string, ind
   }
 }
 
+function resolveLeadFieldsFromSourceUrl(
+  url: string,
+  source: LeadSource,
+  niche: string,
+): {
+  name: string
+  sourceUrl: string
+  website?: string
+  contacts: LeadContacts
+} {
+  const sourceUrl = normalizeExternalUrl(url)
+  const contacts: LeadContacts = {}
+
+  if (source === 'vk') {
+    contacts.vk = sourceUrl
+    return {
+      name: buildFallbackLeadName('vk', niche),
+      sourceUrl,
+      contacts,
+    }
+  }
+
+  return {
+    name: buildFallbackLeadName(source, niche),
+    sourceUrl,
+    contacts,
+  }
+}
+
 function buildDraftLead(
   params: Pick<AutoSearchParams, 'niche' | 'city'>,
   url: string,
@@ -143,24 +120,27 @@ function buildDraftLead(
   index: number,
 ): AutoSearchDraftLead {
   const niche = normalizeNicheName(params.niche)
-  const name = extractCompanyNameFromUrl(url, index, niche)
-  const contacts = mockContactsForIndex(index)
+  const resolved = resolveLeadFieldsFromSourceUrl(url, source, niche)
+  const contacts = { ...mockContactsForIndex(index), ...resolved.contacts }
+
   const partialLead: Partial<Lead> = {
-    name,
+    name: resolved.name,
     niche,
     city: params.city,
     source,
-    website: url,
+    sourceUrl: resolved.sourceUrl,
+    website: resolved.website,
     contacts,
   }
   const opportunities = suggestOpportunitiesFromLead(partialLead)
   const leadForMessage: Lead = {
     id: 'temp',
-    name,
+    name: resolved.name,
     niche,
     city: params.city,
     source,
-    website: url,
+    sourceUrl: resolved.sourceUrl,
+    website: resolved.website,
     contacts,
     notes: '',
     status: 'draft',
@@ -175,11 +155,12 @@ function buildDraftLead(
   return {
     id: generateId(),
     selected: true,
-    name,
+    name: resolved.name,
     niche,
     city: params.city,
     source,
-    website: url,
+    sourceUrl: resolved.sourceUrl,
+    website: resolved.website,
     contacts,
     opportunities,
     generatedMessage: buildOutreachMessage(leadForMessage),
@@ -216,6 +197,7 @@ export function draftToCreateLeadInput(draft: AutoSearchDraftLead) {
     city: draft.city,
     source: draft.source,
     website: draft.website,
+    sourceUrl: draft.sourceUrl,
     contacts: draft.contacts,
     notes: draft.notes,
     tags: ['autosearch'],
@@ -233,6 +215,7 @@ export function regenerateDraftMessage(draft: AutoSearchDraftLead): string {
     city: draft.city,
     source: draft.source,
     website: draft.website,
+    sourceUrl: draft.sourceUrl,
     contacts: draft.contacts,
     notes: draft.notes,
     status: 'draft',

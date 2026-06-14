@@ -34,9 +34,9 @@ export function suggestOpportunitiesFromLead(lead: Partial<Lead>): ImprovementOp
     suggested.push('no_website')
   }
 
-  const hasWhatsApp = Boolean(lead.contacts?.whatsapp?.replace(/\D/g, '').length)
+  const hasPhone = Boolean(lead.contacts?.phone?.replace(/\D/g, '').length)
 
-  if (!hasWhatsApp && !lead.contacts?.telegram) {
+  if (!hasPhone && !lead.contacts?.telegram) {
     suggested.push('no_whatsapp')
   }
 

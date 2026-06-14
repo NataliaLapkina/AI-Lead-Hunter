@@ -7,6 +7,7 @@ import type {
 import { generateId } from '@/lib/utils'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { createEmptyLeadContacts, normalizeLeadContacts } from '@/lib/leadContacts'
+import { splitWebsiteAndSourceUrl } from '@/lib/leadLinks'
 
 export function createEmptyContacts(): Lead['contacts'] {
   return createEmptyLeadContacts()
@@ -21,13 +22,16 @@ export function createLeadEntity(input: CreateLeadInput): Lead {
     payload: { source: input.source },
   }
 
+  const links = splitWebsiteAndSourceUrl(input.website, input.sourceUrl)
+
   return {
     id: generateId(),
     name: input.name,
     niche: normalizeNicheName(input.niche),
     city: input.city,
     source: input.source,
-    website: input.website || undefined,
+    website: links.website,
+    sourceUrl: links.sourceUrl,
     contacts: normalizeLeadContacts(input.contacts),
     notes: input.notes,
     generatedMessage: input.generatedMessage,
@@ -87,6 +91,7 @@ export function updateLeadEntity(lead: Lead, input: UpdateLeadInput): Lead {
     ...input,
     niche: input.niche !== undefined ? normalizeNicheName(input.niche) : lead.niche,
     website: input.website === '' ? undefined : (input.website ?? lead.website),
+    sourceUrl: input.sourceUrl === '' ? undefined : (input.sourceUrl ?? lead.sourceUrl),
     contacts: input.contacts !== undefined ? normalizeLeadContacts(input.contacts) : lead.contacts,
     tags: input.tags ?? lead.tags,
     opportunities: input.opportunities ?? lead.opportunities ?? [],

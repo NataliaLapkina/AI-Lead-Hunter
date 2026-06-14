@@ -14,6 +14,7 @@ import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
 import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
+import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
 import { getSenderProfile } from '@/lib/senderProfile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -203,6 +204,7 @@ export function LeadDetailView({
 
           <div className="space-y-2">
             <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
+            <LeadSourceLink lead={lead} />
             <div className="space-y-2 text-sm">
               {lead.website && (
                 <div className="flex items-center justify-between gap-2">
@@ -210,7 +212,7 @@ export function LeadDetailView({
                   <a
                     href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                     className="truncate text-primary hover:underline"
                   >
                     {lead.website.replace(/^https?:\/\//, '')}
@@ -223,27 +225,42 @@ export function LeadDetailView({
                   <span>{lead.contacts.email}</span>
                 </div>
               )}
-              {lead.contacts.whatsapp && (
+              {lead.contacts.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span>{lead.contacts.whatsapp}</span>
+                  <span>{lead.contacts.phone}</span>
                 </div>
               )}
               {lead.contacts.telegram && (
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="break-all">{lead.contacts.telegram}</span>
+                  <a
+                    href={lead.contacts.telegram.startsWith('http') ? lead.contacts.telegram : `https://t.me/${lead.contacts.telegram.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-primary hover:underline"
+                  >
+                    {lead.contacts.telegram}
+                  </a>
                 </div>
               )}
               {lead.contacts.vk && (
                 <div className="flex items-center gap-2">
                   <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="break-all">{lead.contacts.vk}</span>
+                  <a
+                    href={lead.contacts.vk.startsWith('http') ? lead.contacts.vk : `https://vk.com/${lead.contacts.vk}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-primary hover:underline"
+                  >
+                    {lead.contacts.vk}
+                  </a>
                 </div>
               )}
-              {!lead.website &&
+              {!lead.sourceUrl &&
+                !lead.website &&
                 !lead.contacts.email &&
-                !lead.contacts.whatsapp &&
+                !lead.contacts.phone &&
                 !lead.contacts.telegram &&
                 !lead.contacts.vk && (
                   <p className="text-muted-foreground">Контакты не указаны</p>
