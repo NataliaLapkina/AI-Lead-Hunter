@@ -61,7 +61,7 @@ export function RecentLeads({ leads, onLeadClick }: RecentLeadsProps) {
                 key={lead.id}
                 type="button"
                 onClick={() => onLeadClick(lead.id)}
-                className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors hover:bg-muted/50"
+                className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <div>
                   <p className="text-sm font-medium">{lead.name}</p>

@@ -121,6 +121,8 @@ export type LeadPotentialLevel = 'low' | 'medium' | 'high'
 
 export type LeadPotentialFilter = 'all' | LeadPotentialLevel
 
+export type LeadStatusFilter = LeadStatus | 'all' | 'in_progress' | 'client'
+
 export interface AnalyticsSummary {
   totalLeads: number
   byStatus: Record<LeadStatus, number>
@@ -164,7 +166,7 @@ export interface AppSettings {
 
 export interface LeadFilters {
   search: string
-  status: LeadStatus | 'all'
+  status: LeadStatusFilter
   niche: string
   source: LeadSource | 'all'
   potential: LeadPotentialFilter

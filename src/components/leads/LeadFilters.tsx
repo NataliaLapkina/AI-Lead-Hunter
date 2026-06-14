@@ -1,6 +1,6 @@
 import type { LeadFilters, LeadSort, LeadSortField, LeadPotentialFilter } from '@/domain/lead'
 import { LEAD_SOURCES, LEAD_STATUSES } from '@/lib/constants'
-import { getSourceLabel, getStatusLabel, getNicheLabel, getLeadPotentialShortLabel, ru } from '@/i18n/ru'
+import { getSourceLabel, getStatusFilterLabel, getNicheLabel, getLeadPotentialShortLabel, ru } from '@/i18n/ru'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
   Select,
@@ -49,9 +49,11 @@ export function LeadFiltersBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{ru.common.all}</SelectItem>
+              <SelectItem value="in_progress">{ru.dashboard.contacted}</SelectItem>
+              <SelectItem value="client">{ru.dashboard.won}</SelectItem>
               {LEAD_STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {getStatusLabel(s)}
+                  {getStatusFilterLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>

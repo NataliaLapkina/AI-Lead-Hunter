@@ -56,7 +56,7 @@ export function DashboardPage() {
           />
         ) : (
           <div className="space-y-6">
-            <StatsCards analytics={analytics} />
+            <StatsCards analytics={analytics} interactive />
             <div className="grid gap-6 lg:grid-cols-2">
               <QuickActions onAddLead={() => openLeadForm()} />
               <RecentLeads leads={leads} onLeadClick={openLeadSheet} />

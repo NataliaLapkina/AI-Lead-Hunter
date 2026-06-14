@@ -7,17 +7,11 @@ import type {
   LeadSort,
   ImportResult,
 } from '@/domain/lead'
+import { DEFAULT_LEAD_FILTERS } from '@/features/leads/leadFilters'
 import { repositories } from '@/repositories'
 import { useLeadStore } from '@/stores'
 
-const defaultFilters: LeadFilters = {
-  search: '',
-  status: 'all',
-  niche: '',
-  source: 'all',
-  potential: 'all',
-  tags: [],
-}
+const defaultFilters: LeadFilters = DEFAULT_LEAD_FILTERS
 
 const defaultSort: LeadSort = {
   field: 'createdAt',

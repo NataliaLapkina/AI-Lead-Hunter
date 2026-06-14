@@ -5,6 +5,7 @@ import type {
   SearchPlatform,
   ActivityType,
   LeadPotentialLevel,
+  LeadStatusFilter,
 } from '@/domain/lead'
 
 export const ru = {
@@ -106,6 +107,7 @@ export const ru = {
     newSearch: 'Новый поиск',
     addLead: 'Добавить лида',
     viewAll: 'Все лиды',
+    viewList: 'Посмотреть',
     emptyTitle: 'Начните с первого поиска',
     emptyDescription: 'Создайте поисковые запросы для ниши или добавьте первого лида вручную.',
   },
@@ -381,6 +383,13 @@ export function t(key: string, params?: Record<string, string | number>): string
 
 export function getStatusLabel(status: LeadStatus): string {
   return ru.status[status]
+}
+
+export function getStatusFilterLabel(status: LeadStatusFilter): string {
+  if (status === 'all') return ru.common.all
+  if (status === 'in_progress') return ru.dashboard.contacted
+  if (status === 'client') return ru.dashboard.won
+  return getStatusLabel(status)
 }
 
 export function getSourceLabel(source: LeadSource): string {

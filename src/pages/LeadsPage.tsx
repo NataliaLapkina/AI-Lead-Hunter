@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { UserPlus, Download, Upload, Users } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { LeadFiltersBar } from '@/components/leads/LeadFilters'
@@ -8,6 +9,7 @@ import { LeadForm } from '@/components/leads/LeadForm'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Button } from '@/components/ui/button'
 import { useLeads, useLead } from '@/features/leads/hooks/useLeads'
+import { mergeLeadFiltersFromSearchParams } from '@/features/leads/leadFilters'
 import { useUIStore } from '@/stores'
 import { getUniqueNiches, getUniqueTags } from '@/features/analytics/computeAnalytics'
 import { exportLeadsToCsv, getCsvFilename } from '@/features/export/csvExporter'
@@ -33,6 +35,12 @@ export function LeadsPage() {
     importLeads,
     addComment,
   } = useLeads()
+
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    setFilters(mergeLeadFiltersFromSearchParams(searchParams))
+  }, [searchParams, setFilters])
 
   const {
     selectedLeadId,

@@ -17,6 +17,7 @@ import {
   normalizeEmail,
 } from '@/domain/leadFactory'
 import { appendComment } from '@/domain/leadComments'
+import { IN_PROGRESS_STATUSES } from '@/features/leads/leadFilters'
 import { computeLeadScore, matchesPotentialFilter } from '@/lib/leadScore'
 
 export class LocalStorageLeadRepository implements ILeadRepository {
@@ -78,7 +79,11 @@ export class LocalStorageLeadRepository implements ILeadRepository {
       )
     }
 
-    if (filters.status !== 'all') {
+    if (filters.status === 'in_progress') {
+      leads = leads.filter((l) => IN_PROGRESS_STATUSES.includes(l.status))
+    } else if (filters.status === 'client') {
+      leads = leads.filter((l) => l.status === 'won')
+    } else if (filters.status !== 'all') {
       leads = leads.filter((l) => l.status === filters.status)
     }
 
