@@ -69,11 +69,9 @@ export function LeadDetailView({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAuditing, setIsAuditing] = useState(false)
 
-  const profileName = settings?.profile.name || 'специалист'
-  const profileBusiness = settings?.profile.businessType || ''
   const apiKey = settings?.integrations.openaiApiKey
 
-  const fallbackMessage = buildOutreachMessage(lead, profileName, profileBusiness)
+  const fallbackMessage = buildOutreachMessage(lead)
   const message = lead.generatedMessage || fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
 
@@ -89,11 +87,7 @@ export function LeadDetailView({
     }
     setIsGenerating(true)
     try {
-      const generated = await generateAIMessage(apiKey!, {
-        lead,
-        profileName,
-        profileBusiness,
-      })
+      const generated = await generateAIMessage(apiKey!, { lead })
       await onUpdateLead(lead.id, { generatedMessage: generated })
       toast.success(ru.leads.messageGenerated)
     } catch (e) {

@@ -18,28 +18,7 @@ export function buildRecommendations(opportunities: ImprovementOpportunity[]): s
   return opportunities.map(getOpportunityRecommendation)
 }
 
-export function buildOutreachMessage(
-  lead: Lead,
-  profileName: string,
-  profileBusiness: string,
-): string {
-  const business = profileBusiness || lead.niche
-  const opportunities = lead.opportunities ?? []
-
-  if (opportunities.length === 0) {
-    return ru.leads.messageTemplate
-      .replace('{name}', profileName)
-      .replace('{niche}', business)
-      .replace('{company}', lead.name)
-  }
-
-  const points = opportunities.map((key) => getOpportunityPitch(key)).join(' ')
-  const intro = `Здравствуйте! Меня зовут ${profileName}, я занимаюсь ${business}.`
-  const observation = `Изучил ${lead.name}${lead.city ? ` (${lead.city})` : ''} и заметил несколько точек роста: ${points}`
-  const cta = 'Могу предложить конкретное решение и показать примеры работ. Удобно обсудить?'
-
-  return `${intro} ${observation} ${cta}`
-}
+export { buildOutreachMessage, OUTREACH_SENDER } from '@/features/leads/outreachMessage'
 
 export function suggestOpportunitiesFromLead(lead: Partial<Lead>): ImprovementOpportunity[] {
   const suggested: ImprovementOpportunity[] = []

@@ -142,7 +142,6 @@ export const ru = {
     duplicateWarning: 'Похожий лид уже существует',
     detailTitle: 'Карточка лида',
     copyMessage: 'Копировать сообщение',
-    messageTemplate: 'Здравствуйте! Меня зовут {name}, я занимаюсь {niche}. Заметил ваш проект {company} и хотел бы обсудить возможное сотрудничество.',
     formName: 'Название / Имя',
     formNamePlaceholder: 'Компания или ФИО',
     formWebsite: 'Сайт',
