@@ -99,17 +99,20 @@ export function extractCompanyNameFromUrl(url: string, index: number, niche: str
   return `${normalizeNicheName(niche)} — профиль ${index + 1}`
 }
 
-function mockContactsForIndex(index: number, source: LeadSource): LeadContacts {
-  const contacts: LeadContacts = { emails: [], phones: [] }
+function mockContactsForIndex(index: number): LeadContacts {
+  const contacts: LeadContacts = {}
 
   if (index % 2 === 0) {
-    contacts.phones = [`+7 (9${String(10 + (index % 8)).padStart(2, '0')}) ${100 + index}-${20 + index}-${30 + index}`]
+    contacts.whatsapp = `+7 (9${String(10 + (index % 8)).padStart(2, '0')}) ${100 + index}-${20 + index}-${30 + index}`
   }
   if (index % 3 === 0) {
-    contacts.emails = [`info${index + 1}@example.com`]
+    contacts.email = `info${index + 1}@example.com`
   }
-  if (source === 'vk' && index % 4 !== 1) {
-    contacts.telegram = `@${source}_lead_${index + 1}`
+  if (index % 4 !== 1) {
+    contacts.telegram = `https://t.me/lead_${index + 1}`
+  }
+  if (index % 5 === 0) {
+    contacts.vk = `https://vk.com/lead_${index + 1}`
   }
 
   return contacts
@@ -141,7 +144,7 @@ function buildDraftLead(
 ): AutoSearchDraftLead {
   const niche = normalizeNicheName(params.niche)
   const name = extractCompanyNameFromUrl(url, index, niche)
-  const contacts = mockContactsForIndex(index, source)
+  const contacts = mockContactsForIndex(index)
   const partialLead: Partial<Lead> = {
     name,
     niche,

@@ -3,6 +3,7 @@ import { LEAD_STATUSES, IMPROVEMENT_OPPORTUNITIES } from '@/lib/constants'
 import { resolveLeadSource } from '@/lib/leadSources'
 import { getNicheLabel } from '@/i18n/ru'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
+import { migrateLegacyContacts } from '@/lib/leadContacts'
 
 export const SHEET_HEADERS = [
   'id',
@@ -11,9 +12,10 @@ export const SHEET_HEADERS = [
   'city',
   'source',
   'website',
-  'emails',
-  'phones',
+  'email',
+  'whatsapp',
   'telegram',
+  'vk',
   'status',
   'tags',
   'opportunities',
@@ -31,9 +33,10 @@ export function leadToSheetRow(lead: Lead): string[] {
     lead.city,
     lead.source,
     lead.website ?? '',
-    lead.contacts.emails.join(';'),
-    lead.contacts.phones.join(';'),
+    lead.contacts.email ?? '',
+    lead.contacts.whatsapp ?? '',
     lead.contacts.telegram ?? '',
+    lead.contacts.vk ?? '',
     lead.status,
     lead.tags.join(';'),
     (lead.opportunities ?? []).join(';'),
@@ -47,14 +50,17 @@ export function leadToSheetRow(lead: Lead): string[] {
 export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
   if (!row[0]?.trim()) return null
 
-  const status = row[9] as LeadStatus
+  const isLegacyRow = row.length <= 16 && LEAD_STATUSES.includes(row[9] as LeadStatus)
+  const statusIndex = isLegacyRow ? 9 : 10
+  const status = row[statusIndex] as LeadStatus
   const source = resolveLeadSource(row[4])
 
   if (!LEAD_STATUSES.includes(status)) {
     return null
   }
 
-  const opportunities = (row[11] ?? '')
+  const opportunitiesIndex = isLegacyRow ? 11 : 12
+  const opportunities = (row[opportunitiesIndex] ?? '')
     .split(';')
     .filter(Boolean)
     .filter((o): o is ImprovementOpportunity =>
@@ -63,6 +69,19 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
 
   const now = new Date().toISOString()
 
+  const contacts = isLegacyRow
+    ? migrateLegacyContacts({
+        emails: (row[6] ?? '').split(';').filter(Boolean),
+        phones: (row[7] ?? '').split(';').filter(Boolean),
+        telegram: row[8] || undefined,
+      })
+    : migrateLegacyContacts({
+        email: row[6] || undefined,
+        whatsapp: row[7] || undefined,
+        telegram: row[8] || undefined,
+        vk: row[9] || undefined,
+      })
+
   return {
     id: row[0],
     name: row[1] ?? '',
@@ -70,19 +89,15 @@ export function sheetRowToLead(row: string[], rowIndex: number): Lead | null {
     city: row[3] ?? '',
     source,
     website: row[5] || undefined,
-    contacts: {
-      emails: (row[6] ?? '').split(';').filter(Boolean),
-      phones: (row[7] ?? '').split(';').filter(Boolean),
-      telegram: row[8] || undefined,
-    },
+    contacts,
     status,
-    tags: (row[10] ?? '').split(';').filter(Boolean),
+    tags: (row[isLegacyRow ? 10 : 11] ?? '').split(';').filter(Boolean),
     opportunities,
-    notes: row[12] ?? '',
-    generatedMessage: row[13] || undefined,
+    notes: row[isLegacyRow ? 12 : 13] ?? '',
+    generatedMessage: row[isLegacyRow ? 13 : 14] || undefined,
     comments: [],
-    createdAt: row[14] || now,
-    updatedAt: row[15] || now,
+    createdAt: row[isLegacyRow ? 14 : 15] || now,
+    updatedAt: row[isLegacyRow ? 15 : 16] || now,
     activityLog: [],
     sheetsRowIndex: rowIndex,
   }

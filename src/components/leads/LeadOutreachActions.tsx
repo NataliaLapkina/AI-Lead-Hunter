@@ -1,110 +1,101 @@
 import type { Lead } from '@/domain/lead'
 import {
   buildEmailUrl,
-  buildTelegramChatUrl,
-  buildTelegramShareUrl,
-  buildVkProfileUrl,
   buildWhatsAppUrl,
   getLeadEmail,
-  getLeadTelegramHandle,
-  getLeadVkTarget,
-  getLeadWhatsAppPhone,
+  getLeadTelegramUrl,
+  getLeadVkUrl,
+  getLeadWhatsApp,
   openExternalUrl,
 } from '@/lib/outreachChannels'
 import { ru } from '@/i18n/ru'
-import { copyToClipboard } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Mail, MessageCircle } from 'lucide-react'
-import { toast } from 'sonner'
 
 interface LeadOutreachActionsProps {
   lead: Lead
   message: string
 }
 
+function ContactButton({
+  label,
+  icon: Icon,
+  enabled,
+  onClick,
+}: {
+  label: string
+  icon: typeof Mail
+  enabled: boolean
+  onClick: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={!enabled}
+      onClick={onClick}
+      title={!enabled ? ru.leads.contactNotSpecified : undefined}
+      className="gap-2"
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Button>
+  )
+}
+
 export function LeadOutreachActions({ lead, message }: LeadOutreachActionsProps) {
-  const whatsappPhone = getLeadWhatsAppPhone(lead)
-  const telegramHandle = getLeadTelegramHandle(lead)
-  const vkTarget = getLeadVkTarget(lead)
+  const whatsapp = getLeadWhatsApp(lead)
+  const telegramUrl = getLeadTelegramUrl(lead)
+  const vkUrl = getLeadVkUrl(lead)
   const email = getLeadEmail(lead)
 
   const handleWhatsApp = () => {
-    if (!whatsappPhone) return
-    openExternalUrl(buildWhatsAppUrl(whatsappPhone, message))
+    if (!whatsapp) return
+    openExternalUrl(buildWhatsAppUrl(whatsapp, message))
   }
 
-  const handleTelegram = async () => {
-    if (telegramHandle) {
-      await copyToClipboard(message)
-      openExternalUrl(buildTelegramChatUrl(telegramHandle))
-      toast.success(ru.leads.telegramOpened)
-      return
-    }
-    openExternalUrl(buildTelegramShareUrl(message))
+  const handleTelegram = () => {
+    if (!telegramUrl) return
+    openExternalUrl(telegramUrl)
   }
 
-  const handleVk = async () => {
-    if (vkTarget) {
-      await copyToClipboard(message)
-      openExternalUrl(buildVkProfileUrl(vkTarget))
-      toast.success(ru.leads.vkOpened)
-      return
-    }
-    toast.error(ru.leads.vkNotAvailable)
+  const handleVk = () => {
+    if (!vkUrl) return
+    openExternalUrl(vkUrl)
   }
 
   const handleEmail = () => {
     if (!email) return
-    const subject = `Сотрудничество — ${lead.name}`
-    openExternalUrl(buildEmailUrl(email, subject, message))
+    openExternalUrl(buildEmailUrl(email, `Сотрудничество — ${lead.name}`, message))
   }
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={!whatsappPhone}
+      <ContactButton
+        label={ru.leads.openWhatsApp}
+        icon={MessageCircle}
+        enabled={Boolean(whatsapp)}
         onClick={handleWhatsApp}
-        className="gap-2"
-      >
-        <MessageCircle className="h-4 w-4" />
-        {ru.leads.openWhatsApp}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={!telegramHandle && !message.trim()}
-        onClick={() => void handleTelegram()}
-        className="gap-2"
-      >
-        <MessageCircle className="h-4 w-4" />
-        {ru.leads.openTelegram}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={!vkTarget}
-        onClick={() => void handleVk()}
-        className="gap-2"
-      >
-        <MessageCircle className="h-4 w-4" />
-        {ru.leads.openVk}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={!email}
+      />
+      <ContactButton
+        label={ru.leads.openTelegram}
+        icon={MessageCircle}
+        enabled={Boolean(telegramUrl)}
+        onClick={handleTelegram}
+      />
+      <ContactButton
+        label={ru.leads.openVk}
+        icon={MessageCircle}
+        enabled={Boolean(vkUrl)}
+        onClick={handleVk}
+      />
+      <ContactButton
+        label={ru.leads.openEmail}
+        icon={Mail}
+        enabled={Boolean(email)}
         onClick={handleEmail}
-        className="gap-2"
-      >
-        <Mail className="h-4 w-4" />
-        {ru.leads.openEmail}
-      </Button>
+      />
     </div>
   )
 }

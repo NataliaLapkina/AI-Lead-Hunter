@@ -2,9 +2,10 @@ import { z } from 'zod'
 import { AUTO_SEARCH_SOURCES, LEAD_SOURCES, LEAD_STATUSES, IMPROVEMENT_OPPORTUNITIES } from '@/lib/constants'
 
 export const leadContactsSchema = z.object({
-  emails: z.array(z.string().email('Некорректный email')).default([]),
-  phones: z.array(z.string().min(1)).default([]),
+  email: z.string().optional(),
+  whatsapp: z.string().optional(),
   telegram: z.string().optional(),
+  vk: z.string().optional(),
 })
 
 export const createLeadSchema = z.object({

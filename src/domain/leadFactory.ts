@@ -6,9 +6,10 @@ import type {
 } from '@/domain/lead'
 import { generateId } from '@/lib/utils'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
+import { createEmptyLeadContacts, normalizeLeadContacts } from '@/lib/leadContacts'
 
 export function createEmptyContacts(): Lead['contacts'] {
-  return { emails: [], phones: [] }
+  return createEmptyLeadContacts()
 }
 
 export function createLeadEntity(input: CreateLeadInput): Lead {
@@ -27,7 +28,7 @@ export function createLeadEntity(input: CreateLeadInput): Lead {
     city: input.city,
     source: input.source,
     website: input.website || undefined,
-    contacts: input.contacts,
+    contacts: normalizeLeadContacts(input.contacts),
     notes: input.notes,
     generatedMessage: input.generatedMessage,
     status: input.status ?? 'new',
@@ -86,7 +87,7 @@ export function updateLeadEntity(lead: Lead, input: UpdateLeadInput): Lead {
     ...input,
     niche: input.niche !== undefined ? normalizeNicheName(input.niche) : lead.niche,
     website: input.website === '' ? undefined : (input.website ?? lead.website),
-    contacts: input.contacts ?? lead.contacts,
+    contacts: input.contacts !== undefined ? normalizeLeadContacts(input.contacts) : lead.contacts,
     tags: input.tags ?? lead.tags,
     opportunities: input.opportunities ?? lead.opportunities ?? [],
     generatedMessage: input.generatedMessage ?? lead.generatedMessage,

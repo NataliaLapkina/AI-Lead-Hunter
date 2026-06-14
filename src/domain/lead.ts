@@ -64,9 +64,10 @@ export interface SiteAuditResult {
 }
 
 export interface LeadContacts {
-  emails: string[]
-  phones: string[]
+  email?: string
+  whatsapp?: string
   telegram?: string
+  vk?: string
 }
 
 export interface LeadActivity {

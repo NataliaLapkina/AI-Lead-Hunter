@@ -23,6 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Separator } from '@/components/ui/separator'
 
 interface AutoSearchDraftSheetProps {
   draft: AutoSearchDraftLead | null
@@ -129,63 +130,73 @@ export function AutoSearchDraftSheet({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="draft-website">{ru.common.website}</Label>
-            <Input
-              id="draft-website"
-              value={form.website ?? ''}
-              onChange={(e) => setForm({ ...form, website: e.target.value || undefined })}
-            />
-          </div>
+          <Separator />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-4">
+            <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
             <div className="space-y-2">
-              <Label htmlFor="draft-phone">Телефон</Label>
+              <Label htmlFor="draft-website">{ru.common.website}</Label>
               <Input
-                id="draft-phone"
-                value={form.contacts.phones[0] ?? ''}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    contacts: {
-                      ...form.contacts,
-                      phones: e.target.value ? [e.target.value] : [],
-                    },
-                  })
-                }
+                id="draft-website"
+                value={form.website ?? ''}
+                onChange={(e) => setForm({ ...form, website: e.target.value || undefined })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="draft-email">Email</Label>
+              <Label htmlFor="draft-email">{ru.leads.formEmails}</Label>
               <Input
                 id="draft-email"
                 type="email"
-                value={form.contacts.emails[0] ?? ''}
+                value={form.contacts.email ?? ''}
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    contacts: {
-                      ...form.contacts,
-                      emails: e.target.value ? [e.target.value] : [],
-                    },
+                    contacts: { ...form.contacts, email: e.target.value || undefined },
                   })
                 }
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="draft-telegram">Telegram / VK</Label>
-            <Input
-              id="draft-telegram"
-              value={form.contacts.telegram ?? ''}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  contacts: { ...form.contacts, telegram: e.target.value || undefined },
-                })
-              }
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="draft-whatsapp">{ru.leads.formWhatsapp}</Label>
+                <Input
+                  id="draft-whatsapp"
+                  value={form.contacts.whatsapp ?? ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      contacts: { ...form.contacts, whatsapp: e.target.value || undefined },
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="draft-telegram">{ru.leads.formTelegram}</Label>
+                <Input
+                  id="draft-telegram"
+                  value={form.contacts.telegram ?? ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      contacts: { ...form.contacts, telegram: e.target.value || undefined },
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="draft-vk">{ru.leads.formVk}</Label>
+              <Input
+                id="draft-vk"
+                value={form.contacts.vk ?? ''}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    contacts: { ...form.contacts, vk: e.target.value || undefined },
+                  })
+                }
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

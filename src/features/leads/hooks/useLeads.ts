@@ -71,8 +71,8 @@ export function useLeads() {
   )
 
   const checkDuplicates = useCallback(
-    async (website?: string, emails?: string[]) => {
-      return repositories.leads.findDuplicates(website, emails)
+    async (website?: string, email?: string) => {
+      return repositories.leads.findDuplicates(website, email)
     },
     [],
   )

@@ -69,7 +69,10 @@ export class LocalStorageLeadRepository implements ILeadRepository {
           l.niche.toLowerCase().includes(q) ||
           l.city.toLowerCase().includes(q) ||
           l.website?.toLowerCase().includes(q) ||
-          l.contacts.emails.some((e) => e.toLowerCase().includes(q)) ||
+          l.contacts.email?.toLowerCase().includes(q) ||
+          l.contacts.whatsapp?.toLowerCase().includes(q) ||
+          l.contacts.telegram?.toLowerCase().includes(q) ||
+          l.contacts.vk?.toLowerCase().includes(q) ||
           l.tags.some((t) => t.toLowerCase().includes(q)),
       )
     }
@@ -112,18 +115,17 @@ export class LocalStorageLeadRepository implements ILeadRepository {
     return leads
   }
 
-  async findDuplicates(website?: string, emails?: string[]): Promise<Lead[]> {
+  async findDuplicates(website?: string, email?: string): Promise<Lead[]> {
     const leads = this.getLeads()
     const normalizedWebsite = normalizeWebsite(website)
-    const normalizedEmails = emails?.map(normalizeEmail) ?? []
+    const normalizedEmail = email ? normalizeEmail(email) : undefined
 
     return leads.filter((lead) => {
       if (normalizedWebsite && lead.website) {
         if (normalizeWebsite(lead.website) === normalizedWebsite) return true
       }
-      if (normalizedEmails.length > 0) {
-        const leadEmails = lead.contacts.emails.map(normalizeEmail)
-        if (normalizedEmails.some((e) => leadEmails.includes(e))) return true
+      if (normalizedEmail && lead.contacts.email) {
+        if (normalizeEmail(lead.contacts.email) === normalizedEmail) return true
       }
       return false
     })
@@ -137,7 +139,7 @@ export class LocalStorageLeadRepository implements ILeadRepository {
       try {
         const duplicates = await this.findDuplicates(
           lead.website,
-          lead.contacts.emails,
+          lead.contacts.email,
         )
         if (duplicates.length > 0) {
           result.skipped++

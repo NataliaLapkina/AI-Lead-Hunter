@@ -1,6 +1,7 @@
 import type { Lead, ImportResult } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
 import { resolveLeadSource } from '@/lib/leadSources'
+import { migrateLegacyContacts } from '@/lib/leadContacts'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { generateId } from '@/lib/utils'
 
@@ -38,7 +39,7 @@ function isValidLead(obj: unknown): obj is Lead {
 
 function normalizeImportedLead(raw: Lead): Lead {
   const now = new Date().toISOString()
-  const legacyLinkedin = (raw.contacts as { linkedin?: string } | undefined)?.linkedin
+  const legacy = raw.contacts as { linkedin?: string } | undefined
 
   return {
     ...raw,
@@ -50,11 +51,10 @@ function normalizeImportedLead(raw: Lead): Lead {
     comments: raw.comments ?? [],
     source: resolveLeadSource(raw.source),
     niche: normalizeNicheName(raw.niche),
-    contacts: {
-      emails: raw.contacts?.emails ?? [],
-      phones: raw.contacts?.phones ?? [],
-      telegram: raw.contacts?.telegram ?? legacyLinkedin,
-    },
+    contacts: migrateLegacyContacts({
+      ...raw.contacts,
+      telegram: raw.contacts?.telegram ?? legacy?.linkedin,
+    }),
     activityLog: raw.activityLog?.length
       ? raw.activityLog
       : [

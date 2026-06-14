@@ -15,9 +15,10 @@ interface AutoSearchPreviewTableProps {
 
 function formatContacts(draft: AutoSearchDraftLead): string {
   const parts: string[] = []
-  if (draft.contacts.phones[0]) parts.push(draft.contacts.phones[0])
-  if (draft.contacts.emails[0]) parts.push(draft.contacts.emails[0])
+  if (draft.contacts.whatsapp) parts.push(draft.contacts.whatsapp)
+  if (draft.contacts.email) parts.push(draft.contacts.email)
   if (draft.contacts.telegram) parts.push(draft.contacts.telegram)
+  if (draft.contacts.vk) parts.push(draft.contacts.vk)
   return parts.join(' · ') || '—'
 }
 

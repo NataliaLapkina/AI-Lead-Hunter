@@ -197,50 +197,55 @@ export function LeadDetailView({
               <span className="text-muted-foreground">{ru.common.source}</span>
               <span>{getSourceLabel(lead.source)}</span>
             </div>
-            {lead.website && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{ru.common.website}</span>
-                <a
-                  href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-primary hover:underline"
-                >
-                  {lead.website.replace(/^https?:\/\//, '')}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
           </div>
 
           <Separator />
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">{ru.common.contacts}</p>
+            <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
             <div className="space-y-2 text-sm">
-              {lead.contacts.emails.map((email) => (
-                <div key={email} className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${email}`} className="text-primary hover:underline">
-                    {email}
+              {lead.website && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{ru.common.website}</span>
+                  <a
+                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate text-primary hover:underline"
+                  >
+                    {lead.website.replace(/^https?:\/\//, '')}
                   </a>
                 </div>
-              ))}
-              {lead.contacts.phones.map((phone) => (
-                <div key={phone} className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${phone}`}>{phone}</a>
-                </div>
-              ))}
-              {lead.contacts.telegram && (
+              )}
+              {lead.contacts.email && (
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                  <span>{lead.contacts.telegram}</span>
+                  <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>{lead.contacts.email}</span>
                 </div>
               )}
-              {lead.contacts.emails.length === 0 &&
-                lead.contacts.phones.length === 0 &&
-                !lead.contacts.telegram && (
+              {lead.contacts.whatsapp && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>{lead.contacts.whatsapp}</span>
+                </div>
+              )}
+              {lead.contacts.telegram && (
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="break-all">{lead.contacts.telegram}</span>
+                </div>
+              )}
+              {lead.contacts.vk && (
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="break-all">{lead.contacts.vk}</span>
+                </div>
+              )}
+              {!lead.website &&
+                !lead.contacts.email &&
+                !lead.contacts.whatsapp &&
+                !lead.contacts.telegram &&
+                !lead.contacts.vk && (
                   <p className="text-muted-foreground">Контакты не указаны</p>
                 )}
             </div>

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
@@ -34,7 +35,7 @@ interface LeadFormProps {
   lead?: Lead | null
   initialValues?: Partial<CreateLeadInput>
   onSubmit: (data: CreateLeadInput) => Promise<void>
-  onCheckDuplicates?: (website?: string, emails?: string[]) => Promise<Lead[]>
+  onCheckDuplicates?: (website?: string, email?: string) => Promise<Lead[]>
 }
 
 export function LeadForm({
@@ -51,8 +52,9 @@ export function LeadForm({
   const [source, setSource] = useState<CreateLeadInput['source']>('other')
   const [website, setWebsite] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
   const [telegram, setTelegram] = useState('')
+  const [vk, setVk] = useState('')
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [opportunities, setOpportunities] = useState<ImprovementOpportunity[]>([])
@@ -69,9 +71,10 @@ export function LeadForm({
         setCity(lead.city)
         setSource(lead.source)
         setWebsite(lead.website ?? '')
-        setEmail(lead.contacts.emails[0] ?? '')
-        setPhone(lead.contacts.phones[0] ?? '')
+        setEmail(lead.contacts.email ?? '')
+        setWhatsapp(lead.contacts.whatsapp ?? '')
         setTelegram(lead.contacts.telegram ?? '')
+        setVk(lead.contacts.vk ?? '')
         setNotes(lead.notes)
         setTags(lead.tags)
         setOpportunities(lead.opportunities ?? [])
@@ -81,9 +84,10 @@ export function LeadForm({
         setCity(initialValues?.city ?? '')
         setSource(initialValues?.source ?? 'other')
         setWebsite(initialValues?.website ?? '')
-        setEmail(initialValues?.contacts?.emails?.[0] ?? '')
-        setPhone(initialValues?.contacts?.phones?.[0] ?? '')
+        setEmail(initialValues?.contacts?.email ?? '')
+        setWhatsapp(initialValues?.contacts?.whatsapp ?? '')
         setTelegram(initialValues?.contacts?.telegram ?? '')
+        setVk(initialValues?.contacts?.vk ?? '')
         setNotes(initialValues?.notes ?? '')
         setTags(initialValues?.tags ?? [])
         setOpportunities(initialValues?.opportunities ?? [])
@@ -105,14 +109,18 @@ export function LeadForm({
     setTags(tags.filter((t) => t !== tag))
   }
 
+  const buildContacts = () => ({
+    ...createEmptyContacts(),
+    email: email || undefined,
+    whatsapp: whatsapp || undefined,
+    telegram: telegram || undefined,
+    vk: vk || undefined,
+  })
+
   const handleSuggestImprovements = () => {
     const suggested = suggestOpportunitiesFromLead({
       website,
-      contacts: {
-        emails: email ? [email] : [],
-        phones: phone ? [phone] : [],
-        telegram: telegram || undefined,
-      },
+      contacts: buildContacts(),
     })
     setOpportunities((prev) => [...new Set([...prev, ...suggested])])
   }
@@ -127,12 +135,7 @@ export function LeadForm({
       city,
       source,
       website: website || undefined,
-      contacts: {
-        ...createEmptyContacts(),
-        emails: email ? [email] : [],
-        phones: phone ? [phone] : [],
-        telegram: telegram || undefined,
-      },
+      contacts: buildContacts(),
       notes,
       tags,
       opportunities,
@@ -150,10 +153,7 @@ export function LeadForm({
     }
 
     if (onCheckDuplicates && !lead) {
-      const duplicates = await onCheckDuplicates(
-        website || undefined,
-        email ? [email] : undefined,
-      )
+      const duplicates = await onCheckDuplicates(website || undefined, email || undefined)
       if (duplicates.length > 0) {
         setDuplicateWarning(true)
         return
@@ -209,22 +209,26 @@ export function LeadForm({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{ru.common.source}</Label>
-              <Select value={source} onValueChange={(v) => setSource(v as CreateLeadInput['source'])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LEAD_SOURCES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {getSourceLabel(s)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>{ru.common.source}</Label>
+            <Select value={source} onValueChange={(v) => setSource(v as CreateLeadInput['source'])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {getSourceLabel(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <p className="text-sm font-medium">{ru.leads.formContactsSection}</p>
             <div className="space-y-2">
               <Label htmlFor="website">{ru.leads.formWebsite}</Label>
               <Input
@@ -235,31 +239,51 @@ export function LeadForm({
               />
               {errors.website && <p className="text-xs text-destructive">{errors.website}</p>}
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">{ru.leads.formEmails}</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            {errors['contacts.emails'] && (
-              <p className="text-xs text-destructive">{errors['contacts.emails']}</p>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="phone">{ru.leads.formPhones}</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Label htmlFor="email">{ru.leads.formEmails}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@example.com"
+              />
+              {errors['contacts.email'] && (
+                <p className="text-xs text-destructive">{errors['contacts.email']}</p>
+              )}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp">{ru.leads.formWhatsapp}</Label>
+                <Input
+                  id="whatsapp"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="+7 ..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telegram">{ru.leads.formTelegram}</Label>
+                <Input
+                  id="telegram"
+                  value={telegram}
+                  onChange={(e) => setTelegram(e.target.value)}
+                  placeholder="https://t.me/... или @username"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telegram">{ru.leads.formTelegram}</Label>
-              <Input id="telegram" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+              <Label htmlFor="vk">{ru.leads.formVk}</Label>
+              <Input
+                id="vk"
+                value={vk}
+                onChange={(e) => setVk(e.target.value)}
+                placeholder="https://vk.com/..."
+              />
             </div>
           </div>
+
+          <Separator />
 
           <div className="space-y-2">
             <Label htmlFor="notes">{ru.leads.formNotes}</Label>
