@@ -18,7 +18,13 @@ export function buildRecommendations(opportunities: ImprovementOpportunity[]): s
   return opportunities.map(getOpportunityRecommendation)
 }
 
-export { buildOutreachMessage, OUTREACH_SENDER } from '@/features/leads/outreachMessage'
+export { buildOutreachMessage, OUTREACH_SENDER, collectOutreachBullets } from '@/features/leads/outreachMessage'
+export {
+  getNicheOutreachRecommendations,
+  resolveNicheRecommendationKey,
+  NICHE_OUTREACH_RECOMMENDATIONS,
+  UNIVERSAL_OUTREACH_RECOMMENDATIONS,
+} from '@/features/leads/nicheOutreachRecommendations'
 
 export function suggestOpportunitiesFromLead(lead: Partial<Lead>): ImprovementOpportunity[] {
   const suggested: ImprovementOpportunity[] = []

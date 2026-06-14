@@ -2,6 +2,7 @@ import type { Lead } from '@/domain/lead'
 import {
   OUTREACH_SENDER,
   buildOutreachMessage,
+  collectOutreachBullets,
 } from '@/features/leads/outreachMessage'
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { callOpenAI } from './openaiClient'
@@ -16,10 +17,11 @@ export async function generateAIMessage(
 ): Promise<string> {
   const { lead } = input
 
-  const problems = (lead.opportunities ?? [])
+  const checkedProblems = (lead.opportunities ?? [])
     .map((o) => getOpportunityLabel(o))
     .join('; ')
 
+  const nicheBullets = collectOutreachBullets(lead)
   const auditSummary = lead.siteAudit?.summary ?? ''
   const referenceMessage = buildOutreachMessage(lead)
 
@@ -31,26 +33,29 @@ export async function generateAIMessage(
 - Фраза про отправителя: "Я занимаюсь ${OUTREACH_SENDER.specialization}."
 - ЗАПРЕЩЕНО: использовать нишу клиента как профессию отправителя (например "я занимаюсь Бухгалтер", "я логопед")
 - ЗАПРЕЩЕНО: "меня зовут специалист" или любое имя кроме ${OUTREACH_SENDER.name}
-- Нишу клиента (${lead.niche}) используй только для персонализации обращения к ЕГО бизнесу
-- Сохраняй структуру эталонного шаблона: приветствие → представление → специализация → изучила компанию → буллеты проблем → последствия → предложение → аудит → подпись
-- 2–4 буллета с проблемами клиента
+- ЗАПРЕЩЕНО: писать "(ниша: ...)" или "ниша:" в тексте сообщения — ниша только для внутренней персонализации
+- Фраза о компании: "Изучила вашу компанию «${lead.name || '...'}» и заметила несколько точек роста:" — без упоминания ниши в скобках
+- Буллеты проблем — из списка рекомендаций для клиента (2–4 пункта)
+- Сохраняй структуру эталонного шаблона: приветствие → представление → специализация → изучила компанию → буллеты → последствия → предложение → аудит → подпись
 - Без эмодзи`
 
   const user = `Напиши персонализированное сообщение для клиента.
 
-Данные клиента:
+Данные клиента (для внутренней персонализации, не цитируй нишу в тексте):
 - Компания: ${lead.name}
-- Ниша клиента (только для персонализации, НЕ профессия отправителя): ${lead.niche}
+- Ниша: ${lead.niche}
 - Город: ${lead.city || 'не указан'}
 - Сайт: ${lead.website || 'нет'}
-- Выявленные проблемы: ${problems || 'не указаны'}
+- Отмеченные проблемы в карточке: ${checkedProblems || 'не указаны'}
+- Рекомендации для буллетов (используй эти формулировки):
+${nicheBullets.map((b) => `• ${b}`).join('\n')}
 - Аудит сайта: ${auditSummary || 'не проводился'}
 - Заметки: ${lead.notes || 'нет'}
 
 Эталон по структуре и тону:
 ${referenceMessage}
 
-Адаптируй буллеты под данные клиента. Не меняй имя и специализацию отправителя.`
+Адаптируй буллеты под клиента. Не меняй имя и специализацию отправителя. Не добавляй "(ниша: ...)" в текст.`
 
   return callOpenAI(apiKey, [
     { role: 'system', content: system },
