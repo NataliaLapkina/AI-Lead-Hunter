@@ -1,4 +1,5 @@
 import type { Lead, LeadSource } from '@/domain/lead'
+import { AUTO_SEARCH_SOURCES } from '@/lib/constants'
 import { getSourceLabel } from '@/i18n/ru'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 
@@ -43,6 +44,44 @@ export function detectSourceFromUrl(url: string, fallback: LeadSource): LeadSour
   return fallback
 }
 
+export function isFallbackLeadName(
+  name: string,
+  niche?: string,
+  source?: LeadSource,
+): boolean {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+
+  if (/^Компания из VK$/i.test(trimmed)) return true
+  if (/ из Авито$/i.test(trimmed)) return true
+  if (/ из Яндекс Карт$/i.test(trimmed)) return true
+  if (/ из 2ГИС$/i.test(trimmed)) return true
+
+  if (!niche) return false
+
+  const sources = source ? [source] : AUTO_SEARCH_SOURCES
+  return sources.some((src) => trimmed === buildFallbackLeadName(src, niche))
+}
+
+export function sanitizeLeadName(
+  name: string | undefined | null,
+  lead?: Pick<Lead, 'source' | 'niche'>,
+): string | null {
+  const trimmed = name?.trim() ?? ''
+  if (!trimmed) return null
+  if (/^(undefined|null)$/i.test(trimmed)) return null
+  if (isPlaceholderLeadName(trimmed)) return null
+  if (isFallbackLeadName(trimmed, lead?.niche, lead?.source)) return null
+  return trimmed
+}
+
+/** @deprecated Используйте sanitizeLeadName */
+export function resolveLeadNameForOutreach(
+  lead: Pick<Lead, 'name' | 'niche' | 'source' | 'sourceUrl' | 'website' | 'contacts'>,
+): string | null {
+  return sanitizeLeadName(lead.name, lead)
+}
+
 export function isPlaceholderLeadName(name: string | undefined | null): boolean {
   const trimmed = name?.trim() ?? ''
   if (!trimmed) return true
@@ -50,23 +89,6 @@ export function isPlaceholderLeadName(name: string | undefined | null): boolean 
   if (looksLikeUrl(trimmed)) return true
   if (isLegacyYandexMapsLeadName(trimmed)) return true
   return false
-}
-
-export function resolveLeadNameForOutreach(
-  lead: Pick<Lead, 'name' | 'niche' | 'source' | 'sourceUrl' | 'website' | 'contacts'>,
-): string | null {
-  const raw = lead.name?.trim() ?? ''
-  if (!isPlaceholderLeadName(raw)) {
-    return raw
-  }
-
-  const fixed = fixLegacyLeadName(lead)
-  const normalized = fixed.name.trim()
-  if (normalized && !isPlaceholderLeadName(normalized)) {
-    return normalized
-  }
-
-  return null
 }
 
 export function isLegacyItemLeadName(name: string): boolean {

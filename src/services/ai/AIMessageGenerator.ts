@@ -2,8 +2,9 @@ import type { Lead } from '@/domain/lead'
 import {
   buildOutreachMessage,
   collectOutreachBullets,
-  formatOutreachCompanyPhrase,
-  resolveLeadNameForOutreach,
+  finalizeOutreachMessage,
+  getSafeLeadIntro,
+  safeLeadName,
 } from '@/features/leads/outreachMessage'
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { getNicheLabel } from '@/i18n/ru'
@@ -30,10 +31,10 @@ export async function generateAIMessage(
 
   const nicheBullets = collectOutreachBullets(lead)
   const auditSummary = lead.siteAudit?.summary ?? ''
-  const referenceMessage = buildOutreachMessage(lead, sender)
+  const referenceMessage = buildOutreachMessage(lead, senderProfile)
   const signature = buildMessageSignature(sender)
-  const companyPhrase = formatOutreachCompanyPhrase(lead)
-  const outreachLeadName = resolveLeadNameForOutreach(lead)
+  const companyPhrase = getSafeLeadIntro(lead)
+  const outreachLeadName = safeLeadName(lead)
 
   const system = `Ты помощник по B2B-продажам. Пишешь холодные сообщения на русском языке.
 
@@ -44,7 +45,8 @@ export async function generateAIMessage(
 - ЗАПРЕЩЕНО: использовать нишу клиента как профессию отправителя (например "я занимаюсь Бухгалтер", "я логопед")
 - ЗАПРЕЩЕНО: "меня зовут специалист" или любое имя кроме ${displayName}
 - ЗАПРЕЩЕНО: писать "(ниша: ...)" или "ниша:" в тексте сообщения — ниша только для внутренней персонализации
-- ЗАПРЕЩЕНО: упоминать технические названия вида "Item 100000", "Item 123456" или URL компании в тексте сообщения
+- ЗАПРЕЩЕНО: упоминать технические названия вида "Item 100000", "Item 100001", "Item 100002", "Item 123456" или URL компании в тексте сообщения
+- ЗАПРЕЩЕНО: использовать fallback-имена вида "Нутрициолог из Авито", "Компания из VK" в тексте сообщения
 - Фраза о компании: "${companyPhrase}" — без упоминания ниши в скобках
 - Буллеты проблем — из списка рекомендаций для клиента (2–4 пункта)
 - Сохраняй структуру эталонного шаблона: приветствие → представление → специализация → изучила компанию → буллеты → последствия → предложение → аудит → подпись
@@ -70,8 +72,10 @@ ${referenceMessage}
 
 Адаптируй буллеты под клиента. Не меняй имя и специализацию отправителя. Используй подпись из правил.`
 
-  return callOpenAI(apiKey, [
+  const generated = await callOpenAI(apiKey, [
     { role: 'system', content: system },
     { role: 'user', content: user },
   ])
+
+  return finalizeOutreachMessage(generated, lead, senderProfile)
 }

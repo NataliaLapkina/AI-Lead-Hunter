@@ -109,11 +109,28 @@ export function buildMessageSignature(sender: SenderProfile): string {
   ]
 
   for (const [label, value] of contactLines) {
-    const trimmed = value.trim()
-    if (trimmed) {
-      lines.push(`${label}: ${trimmed}`)
-    }
+    const trimmed = value?.trim() ?? ''
+    if (!trimmed || trimmed === 'undefined' || trimmed === 'null') continue
+    lines.push(`${label}: ${trimmed}`)
   }
 
   return lines.join('\n')
+}
+
+const SIGNATURE_MARKER = 'С уважением,'
+
+export function stripMessageSignature(message: string): string {
+  const idx = message.lastIndexOf(SIGNATURE_MARKER)
+  if (idx === -1) return message.trimEnd()
+  return message.slice(0, idx).trimEnd()
+}
+
+export function applyMessageSignature(
+  message: string,
+  profile?: Partial<AppProfile>,
+): string {
+  const body = stripMessageSignature(message)
+  const signature = buildMessageSignature(getSenderProfile(profile))
+  if (!body) return signature
+  return `${body}\n${signature}`
 }

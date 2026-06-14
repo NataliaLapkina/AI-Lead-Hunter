@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { Lead } from '@/domain/lead'
-import { isPlaceholderLeadName } from '@/lib/leadLinks'
-import { buildOutreachMessage, formatOutreachCompanyPhrase } from './outreachMessage'
+import type { AppProfile, Lead } from '@/domain/lead'
+import { isFallbackLeadName, isPlaceholderLeadName, sanitizeLeadName } from '@/lib/leadLinks'
+import {
+  buildOutreachMessage,
+  finalizeOutreachMessage,
+  getSafeLeadIntro,
+  safeLeadName,
+} from './outreachMessage'
 
 function createTestLead(overrides: Partial<Lead> = {}): Lead {
   return {
@@ -23,50 +28,137 @@ function createTestLead(overrides: Partial<Lead> = {}): Lead {
   }
 }
 
-describe('isPlaceholderLeadName', () => {
+const nataliaProfile: Partial<AppProfile> = {
+  name: 'Наталья',
+  lastName: 'Лапкина',
+  specialization: 'созданием сайтов',
+  whatsapp: '+7 900 000-00-00',
+  telegram: '@natalia',
+  vk: 'vk.com/natalia',
+  email: 'natalia@example.com',
+  portfolio: 'https://portfolio.example.com',
+}
+
+describe('sanitizeLeadName', () => {
   it('detects Item placeholders', () => {
-    expect(isPlaceholderLeadName('Item 100000')).toBe(true)
-    expect(isPlaceholderLeadName('Item 123456')).toBe(true)
-    expect(isPlaceholderLeadName('item 999')).toBe(true)
+    expect(sanitizeLeadName('Item 100000')).toBeNull()
+    expect(sanitizeLeadName('Item 100001')).toBeNull()
+    expect(sanitizeLeadName('Item 100002')).toBeNull()
   })
 
-  it('detects URLs and empty values', () => {
-    expect(isPlaceholderLeadName('https://vk.com/example')).toBe(true)
-    expect(isPlaceholderLeadName('vk.com/example')).toBe(true)
-    expect(isPlaceholderLeadName('')).toBe(true)
-    expect(isPlaceholderLeadName('   ')).toBe(true)
-    expect(isPlaceholderLeadName(undefined)).toBe(true)
+  it('detects URLs, empty values and fallback names', () => {
+    expect(sanitizeLeadName('https://vk.com/example')).toBeNull()
+    expect(sanitizeLeadName('')).toBeNull()
+    expect(sanitizeLeadName('Нутрициолог из Авито', { niche: 'Нутрициолог', source: 'avito' })).toBeNull()
   })
 
-  it('allows normalized names', () => {
-    expect(isPlaceholderLeadName('Нутрициолог из Авито')).toBe(false)
-    expect(isPlaceholderLeadName('Студия красоты «Лилия»')).toBe(false)
+  it('allows real company names', () => {
+    expect(sanitizeLeadName('Тест Клиника')).toBe('Тест Клиника')
+  })
+})
+
+describe('getSafeLeadIntro', () => {
+  it('uses normal company name', () => {
+    expect(getSafeLeadIntro(createTestLead({ name: 'Тест Клиника' }))).toBe(
+      'Изучила вашу компанию «Тест Клиника» и заметила несколько точек роста:',
+    )
+  })
+
+  it('omits technical Item name', () => {
+    expect(getSafeLeadIntro(createTestLead({ name: 'Item 100002' }))).toBe(
+      'Изучила вашу компанию и заметила несколько точек роста:',
+    )
+  })
+
+  it('omits name when empty', () => {
+    expect(getSafeLeadIntro(createTestLead({ name: '' }))).toBe(
+      'Изучила вашу компанию и заметила несколько точек роста:',
+    )
   })
 })
 
 describe('buildOutreachMessage', () => {
-  it('does not include Item placeholder in the final text', () => {
-    const message = buildOutreachMessage(
-      createTestLead({
-        name: 'Item 100000',
-        source: 'avito',
-        sourceUrl: 'https://www.avito.ru/moscow/nutritionist/item_100000',
-      }),
-    )
+  it('does not include Item placeholders in the final text', () => {
+    for (const itemName of ['Item 100000', 'Item 100001', 'Item 100002']) {
+      const message = buildOutreachMessage(
+        createTestLead({
+          name: itemName,
+          source: 'avito',
+          sourceUrl: 'https://www.avito.ru/moscow/nutritionist/item_100000',
+        }),
+        nataliaProfile,
+      )
 
-    expect(message).not.toContain('Item 100000')
-    expect(message).toContain('Нутрициолог из Авито')
+      expect(message).not.toContain('Item 100000')
+      expect(message).not.toContain('Item 100001')
+      expect(message).not.toContain('Item 100002')
+      expect(message).not.toContain('undefined')
+      expect(message).not.toContain('null')
+      expect(message).toContain('Изучила вашу компанию и заметила несколько точек роста:')
+    }
   })
 
-  it('omits company name when only placeholder is available', () => {
-    const phrase = formatOutreachCompanyPhrase(
-      createTestLead({
-        name: '',
-        source: 'other',
-      }),
-    )
+  it('includes normal company name', () => {
+    const message = buildOutreachMessage(createTestLead({ name: 'Тест Клиника' }), nataliaProfile)
+    expect(message).toContain('«Тест Клиника»')
+  })
 
-    expect(phrase).toBe('Изучила вашу компанию и заметила несколько точек роста:')
-    expect(phrase).not.toContain('«')
+  it('includes sender contacts from profile in signature', () => {
+    const message = buildOutreachMessage(createTestLead({ name: 'Item 100002' }), nataliaProfile)
+
+    expect(message).toContain('С уважением,')
+    expect(message).toContain('Наталья Лапкина')
+    expect(message).toContain('WhatsApp: +7 900 000-00-00')
+    expect(message).toContain('Telegram: @natalia')
+    expect(message).toContain('VK: vk.com/natalia')
+    expect(message).toContain('Email: natalia@example.com')
+    expect(message).toContain('Портфолио: https://portfolio.example.com')
+  })
+
+  it('shows only filled signature fields when contacts are empty', () => {
+    const message = buildOutreachMessage(createTestLead({ name: 'Тест Клиника' }))
+
+    expect(message).toContain('С уважением,')
+    expect(message).toContain('Наталья Лапкина')
+    expect(message).not.toMatch(/WhatsApp:\s*\n/)
+    expect(message).not.toContain('WhatsApp: \n')
+    expect(message).not.toContain('Telegram:')
+    expect(message).not.toContain('Email:')
+  })
+})
+
+describe('finalizeOutreachMessage', () => {
+  it('scrubs Item names from stored AI text and refreshes signature', () => {
+    const stored = `Здравствуйте!
+Изучила вашу компанию «Item 100002» и заметила несколько точек роста:
+• проблема
+С уважением,
+Старое Имя`
+
+    const message = finalizeOutreachMessage(stored, createTestLead({ name: 'Item 100002' }), nataliaProfile)
+
+    expect(message).not.toContain('Item 100002')
+    expect(message).toContain('WhatsApp: +7 900 000-00-00')
+    expect(message).toContain('Наталья Лапкина')
+    expect(message).not.toContain('Старое Имя')
+  })
+})
+
+describe('isPlaceholderLeadName', () => {
+  it('flags Item names', () => {
+    expect(isPlaceholderLeadName('Item 100000')).toBe(true)
+  })
+})
+
+describe('isFallbackLeadName', () => {
+  it('flags auto-generated fallback names', () => {
+    expect(isFallbackLeadName('Нутрициолог из Авито', 'Нутрициолог', 'avito')).toBe(true)
+    expect(isFallbackLeadName('Тест Клиника', 'Нутрициолог', 'avito')).toBe(false)
+  })
+})
+
+describe('safeLeadName', () => {
+  it('returns null for Item lead', () => {
+    expect(safeLeadName(createTestLead({ name: 'Item 100002' }))).toBeNull()
   })
 })

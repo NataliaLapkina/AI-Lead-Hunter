@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores'
 import {
   buildOutreachMessage,
   buildRecommendations,
+  finalizeOutreachMessage,
 } from '@/features/leads/improvements'
 import { ImprovementBadges } from '@/components/leads/ImprovementChecklist'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
@@ -15,7 +16,6 @@ import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
 import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
 import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
-import { getSenderProfile } from '@/lib/senderProfile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -74,9 +74,10 @@ export function LeadDetailView({
 
   const apiKey = settings?.integrations.openaiApiKey
 
-  const senderProfile = getSenderProfile(settings?.profile)
-  const fallbackMessage = buildOutreachMessage(lead, senderProfile)
-  const message = lead.generatedMessage || fallbackMessage
+  const fallbackMessage = buildOutreachMessage(lead, settings?.profile)
+  const message = lead.generatedMessage
+    ? finalizeOutreachMessage(lead.generatedMessage, lead, settings?.profile)
+    : fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
 
   const handleCopyMessage = async () => {

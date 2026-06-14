@@ -18,8 +18,8 @@ export function buildRecommendations(opportunities: ImprovementOpportunity[]): s
   return opportunities.map(getOpportunityRecommendation)
 }
 
-export { buildOutreachMessage, collectOutreachBullets } from '@/features/leads/outreachMessage'
-export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName } from '@/lib/senderProfile'
+export { buildOutreachMessage, collectOutreachBullets, finalizeOutreachMessage, getSafeLeadIntro, safeLeadName } from '@/features/leads/outreachMessage'
+export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName, applyMessageSignature } from '@/lib/senderProfile'
 export {
   getNicheOutreachRecommendations,
   resolveNicheRecommendationKey,

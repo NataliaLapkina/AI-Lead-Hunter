@@ -1,27 +1,67 @@
-import type { ImprovementOpportunity, Lead } from '@/domain/lead'
+import type { ImprovementOpportunity, Lead, AppProfile } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
-import { resolveLeadNameForOutreach } from '@/lib/leadLinks'
+import { sanitizeLeadName } from '@/lib/leadLinks'
 import {
   DEFAULT_SENDER_PROFILE,
   OUTREACH_SENDER,
+  applyMessageSignature,
   buildMessageSignature,
   getSenderDisplayName,
   getSenderProfile,
   type SenderProfile,
 } from '@/lib/senderProfile'
-import type { AppProfile } from '@/domain/lead'
 
 export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName }
-export { resolveLeadNameForOutreach } from '@/lib/leadLinks'
+export { sanitizeLeadName } from '@/lib/leadLinks'
 export type { SenderProfile }
 
-export function formatOutreachCompanyPhrase(lead: Lead): string {
-  const name = resolveLeadNameForOutreach(lead)
+export function safeLeadName(lead: Lead): string | null {
+  return sanitizeLeadName(lead.name, lead)
+}
+
+export function getSafeLeadIntro(lead: Lead): string {
+  const name = safeLeadName(lead)
   if (name) {
     return `Изучила вашу компанию «${name}» и заметила несколько точек роста:`
   }
   return 'Изучила вашу компанию и заметила несколько точек роста:'
+}
+
+/** @deprecated Используйте getSafeLeadIntro */
+export function formatOutreachCompanyPhrase(lead: Lead): string {
+  return getSafeLeadIntro(lead)
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function scrubTechnicalLeadNamesFromMessage(message: string, lead: Lead): string {
+  let result = message
+  const rawName = lead.name?.trim()
+
+  if (rawName && !sanitizeLeadName(rawName, lead)) {
+    result = result.replace(new RegExp(`«\\s*${escapeRegExp(rawName)}\\s*»`, 'gi'), '')
+    result = result.replace(new RegExp(escapeRegExp(rawName), 'gi'), '')
+  }
+
+  result = result.replace(/«\s*Item\s+\d+\s*»/gi, '')
+  result = result.replace(/\bItem\s+\d+\b/gi, '')
+  result = result.replace(/\b(undefined|null)\b/gi, '')
+  result = result.replace(/Изучила вашу компанию\s+и заметила/g, 'Изучила вашу компанию и заметила')
+  result = result.replace(/Изучила вашу компанию\s*«\s*»\s*и заметила/g, 'Изучила вашу компанию и заметила')
+  result = result.replace(/\n{3,}/g, '\n\n')
+
+  return result.trimEnd()
+}
+
+export function finalizeOutreachMessage(
+  message: string,
+  lead: Lead,
+  senderProfile?: Partial<AppProfile>,
+): string {
+  return applyMessageSignature(scrubTechnicalLeadNamesFromMessage(message, lead), senderProfile)
 }
 
 function getOpportunityPitch(key: ImprovementOpportunity): string {
@@ -61,26 +101,23 @@ export function collectOutreachBullets(lead: Lead): string[] {
 
 export function buildOutreachMessage(
   lead: Lead,
-  senderInput?: Partial<AppProfile> | SenderProfile,
+  senderProfile?: Partial<AppProfile>,
 ): string {
-  const sender = getSenderProfile(
-    senderInput && 'phone' in senderInput ? senderInput : (senderInput as Partial<AppProfile> | undefined),
-  )
-
+  const sender = getSenderProfile(senderProfile)
   const bullets = collectOutreachBullets(lead)
   const bulletBlock = bullets.map((b) => `• ${b}`).join('\n')
-  const companyPhrase = formatOutreachCompanyPhrase(lead)
-  const signature = buildMessageSignature(sender)
+  const companyPhrase = getSafeLeadIntro(lead)
   const displayName = getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
   const specialization = sender.specialization.trim() || DEFAULT_SENDER_PROFILE.specialization
 
-  return `Здравствуйте!
+  const body = `Здравствуйте!
 Меня зовут ${displayName}.
 Я занимаюсь ${specialization}.
 ${companyPhrase}
 ${bulletBlock}
 Эти моменты могут снижать количество обращений и доверие клиентов.
 Могу показать конкретные варианты улучшений и примеры решений.
-Если интересно — подготовлю краткий аудит без обязательств.
-${signature}`
+Если интересно — подготовлю краткий аудит без обязательств.`
+
+  return finalizeOutreachMessage(body, lead, senderProfile)
 }
