@@ -27,7 +27,7 @@ import { downloadBlob } from '@/lib/utils'
 import { ru, getNicheLabel } from '@/i18n/ru'
 import { toast } from 'sonner'
 import type { AppProfile } from '@/domain/lead'
-import { createDefaultAppProfile, buildMessageSignature, getSenderProfile } from '@/lib/senderProfile'
+import { createDefaultAppProfile, buildSenderSignature } from '@/lib/senderProfile'
 
 export function SettingsPage() {
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
@@ -249,7 +249,7 @@ export function SettingsPage() {
                   {ru.settings.profileSignaturePreview}
                 </p>
                 <pre className="whitespace-pre-wrap text-sm font-sans">
-                  {buildMessageSignature(getSenderProfile(profile))}
+                  {buildSenderSignature(profile)}
                 </pre>
               </div>
               <Button onClick={handleSaveProfile}>{ru.common.save}</Button>

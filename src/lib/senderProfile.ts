@@ -1,4 +1,6 @@
-import type { AppProfile } from '@/domain/lead'
+import type { AppProfile, AppSettings } from '@/domain/lead'
+import { STORAGE_KEYS } from '@/lib/constants'
+import { getStorageItem } from '@/lib/storage'
 
 export interface SenderProfile {
   name: string
@@ -60,27 +62,76 @@ export function createDefaultAppProfile(): AppProfile {
   }
 }
 
+function pickOptionalString(value: string | undefined, fallback: string): string {
+  if (value === undefined || value === null) return fallback
+  return value.trim()
+}
+
 export function normalizeAppProfile(
   raw: Partial<AppProfile> | undefined,
   fallback: AppProfile,
 ): AppProfile {
+  const legacy = (raw ?? {}) as Partial<AppProfile> & { firstName?: string }
+
+  let name = raw?.name?.trim() || legacy.firstName?.trim() || fallback.name
+  let lastName =
+    raw?.lastName !== undefined
+      ? (raw.lastName?.trim() ?? '')
+      : legacy.lastName?.trim() ?? fallback.lastName
+
+  if (!raw?.lastName?.trim() && !legacy.lastName?.trim() && name.includes(' ')) {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      name = parts[0]
+      lastName = parts.slice(1).join(' ')
+    }
+  }
+
   return {
-    name: raw?.name?.trim() || fallback.name,
-    lastName: raw?.lastName?.trim() ?? fallback.lastName,
-    businessType: raw?.businessType?.trim() ?? fallback.businessType,
+    name: name || fallback.name,
+    lastName,
+    businessType: pickOptionalString(raw?.businessType, fallback.businessType),
     specialization: raw?.specialization?.trim() || fallback.specialization,
-    phone: raw?.phone?.trim() ?? fallback.phone,
-    whatsapp: raw?.whatsapp?.trim() ?? fallback.whatsapp,
-    telegram: raw?.telegram?.trim() ?? fallback.telegram,
-    vk: raw?.vk?.trim() ?? fallback.vk,
-    email: raw?.email?.trim() ?? fallback.email,
-    website: raw?.website?.trim() ?? fallback.website,
-    portfolio: raw?.portfolio?.trim() ?? fallback.portfolio,
+    phone: pickOptionalString(raw?.phone, fallback.phone),
+    whatsapp: pickOptionalString(raw?.whatsapp, fallback.whatsapp),
+    telegram: pickOptionalString(raw?.telegram, fallback.telegram),
+    vk: pickOptionalString(raw?.vk, fallback.vk),
+    email: pickOptionalString(raw?.email, fallback.email),
+    website: pickOptionalString(raw?.website, fallback.website),
+    portfolio: pickOptionalString(raw?.portfolio, fallback.portfolio),
   }
 }
 
-export function getSenderProfile(profile?: Partial<AppProfile>): SenderProfile {
-  const base = normalizeAppProfile(profile, createDefaultAppProfile())
+export function readStoredAppProfile(): AppProfile {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  return normalizeAppProfile(settings?.profile, createDefaultAppProfile())
+}
+
+export function resolveOutreachProfile(profile?: Partial<AppProfile> | null): AppProfile {
+  const stored = readStoredAppProfile()
+  if (!profile) return stored
+
+  return normalizeAppProfile(
+    {
+      name: profile.name?.trim() || stored.name,
+      lastName:
+        profile.lastName !== undefined ? (profile.lastName?.trim() ?? '') : stored.lastName,
+      businessType: profile.businessType?.trim() ?? stored.businessType,
+      specialization: profile.specialization?.trim() || stored.specialization,
+      phone: profile.phone?.trim() || stored.phone,
+      whatsapp: profile.whatsapp?.trim() || stored.whatsapp,
+      telegram: profile.telegram?.trim() || stored.telegram,
+      vk: profile.vk?.trim() || stored.vk,
+      email: profile.email?.trim() || stored.email,
+      website: profile.website?.trim() || stored.website,
+      portfolio: profile.portfolio?.trim() || stored.portfolio,
+    },
+    createDefaultAppProfile(),
+  )
+}
+
+export function getSenderProfile(profile?: Partial<AppProfile> | null): SenderProfile {
+  const base = resolveOutreachProfile(profile)
   return {
     name: base.name,
     lastName: base.lastName,
@@ -95,12 +146,18 @@ export function getSenderProfile(profile?: Partial<AppProfile>): SenderProfile {
   }
 }
 
-export function buildMessageSignature(sender: SenderProfile): string {
+function isFilledContactValue(value: string | undefined): value is string {
+  const trimmed = value?.trim() ?? ''
+  return Boolean(trimmed && trimmed !== 'undefined' && trimmed !== 'null')
+}
+
+export function buildSenderSignature(profile?: Partial<AppProfile> | null): string {
+  const sender = getSenderProfile(profile)
   const displayName =
     getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
   const lines = ['С уважением,', displayName]
 
-  const contactLines: Array<[string, string]> = [
+  const contactLines: Array<[string, string | undefined]> = [
     ['WhatsApp', sender.whatsapp],
     ['Telegram', sender.telegram],
     ['VK', sender.vk],
@@ -110,12 +167,25 @@ export function buildMessageSignature(sender: SenderProfile): string {
   ]
 
   for (const [label, value] of contactLines) {
-    const trimmed = value?.trim() ?? ''
-    if (!trimmed || trimmed === 'undefined' || trimmed === 'null') continue
-    lines.push(`${label}: ${trimmed}`)
+    if (!isFilledContactValue(value)) continue
+    lines.push(`${label}: ${value.trim()}`)
   }
 
   return lines.join('\n')
+}
+
+/** @deprecated Используйте buildSenderSignature */
+export function buildMessageSignature(sender: SenderProfile): string {
+  return buildSenderSignature({
+    name: sender.name,
+    lastName: sender.lastName,
+    whatsapp: sender.whatsapp,
+    telegram: sender.telegram,
+    vk: sender.vk,
+    email: sender.email,
+    website: sender.website,
+    portfolio: sender.portfolio,
+  })
 }
 
 const SIGNATURE_MARKER = 'С уважением,'
@@ -128,10 +198,10 @@ export function stripMessageSignature(message: string): string {
 
 export function applyMessageSignature(
   message: string,
-  profile?: Partial<AppProfile>,
+  profile?: Partial<AppProfile> | null,
 ): string {
   const body = stripMessageSignature(message)
-  const signature = buildMessageSignature(getSenderProfile(profile))
+  const signature = buildSenderSignature(profile)
   if (!body) return signature
   return `${body}\n${signature}`
 }

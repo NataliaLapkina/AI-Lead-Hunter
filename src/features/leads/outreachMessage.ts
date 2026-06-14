@@ -5,14 +5,16 @@ import { isTechnicalLeadName, sanitizeLeadName } from '@/lib/leadLinks'
 import {
   DEFAULT_SENDER_PROFILE,
   OUTREACH_SENDER,
-  applyMessageSignature,
-  buildMessageSignature,
+  buildSenderSignature,
   getSenderDisplayName,
   getSenderProfile,
+  resolveOutreachProfile,
+  stripMessageSignature,
   type SenderProfile,
 } from '@/lib/senderProfile'
 
-export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName }
+export { OUTREACH_SENDER, getSenderProfile, buildSenderSignature, getSenderDisplayName, resolveOutreachProfile }
+export { buildSenderSignature as buildMessageSignature } from '@/lib/senderProfile'
 export { sanitizeLeadName, isTechnicalLeadName } from '@/lib/leadLinks'
 export type { SenderProfile }
 
@@ -79,9 +81,13 @@ export function scrubTechnicalLeadNamesFromMessage(message: string, lead: Lead):
 export function finalizeOutreachMessage(
   message: string,
   lead: Lead,
-  senderProfile?: Partial<AppProfile>,
+  senderProfile?: Partial<AppProfile> | null,
 ): string {
-  return applyMessageSignature(scrubTechnicalLeadNamesFromMessage(message, lead), senderProfile)
+  const body = stripMessageSignature(message)
+  const scrubbedBody = scrubTechnicalLeadNamesFromMessage(body, lead)
+  const signature = buildSenderSignature(senderProfile)
+  if (!scrubbedBody) return signature
+  return `${scrubbedBody}\n${signature}`
 }
 
 function getOpportunityPitch(key: ImprovementOpportunity): string {

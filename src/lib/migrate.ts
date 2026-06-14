@@ -257,6 +257,16 @@ function migrateSettingsContactsV14(): void {
   })
 }
 
+function migrateSettingsSenderProfileV15(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    profile: normalizeAppProfile(settings.profile, createDefaultAppProfile()),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -308,6 +318,10 @@ export function runMigrations(): void {
   if (current < 14) {
     migrateLeadsLegacyNamesV14()
     migrateSettingsContactsV14()
+  }
+
+  if (current < 15) {
+    migrateSettingsSenderProfileV15()
   }
 
   if (current < SCHEMA_VERSION) {

@@ -8,7 +8,7 @@ import {
 } from '@/features/leads/outreachMessage'
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { getNicheLabel } from '@/i18n/ru'
-import { getSenderProfile, buildMessageSignature, getSenderDisplayName } from '@/lib/senderProfile'
+import { getSenderDisplayName, buildSenderSignature, getSenderProfile } from '@/lib/senderProfile'
 import type { AppProfile } from '@/domain/lead'
 import { callOpenAI } from './openaiClient'
 
@@ -32,7 +32,7 @@ export async function generateAIMessage(
   const nicheBullets = collectOutreachBullets(lead)
   const auditSummary = lead.siteAudit?.summary ?? ''
   const referenceMessage = buildOutreachMessage(lead, senderProfile)
-  const signature = buildMessageSignature(sender)
+  const signature = buildSenderSignature(senderProfile)
   const companyPhrase = getSafeLeadIntro(lead)
   const outreachLeadName = safeLeadName(lead)
 

@@ -19,7 +19,8 @@ export function buildRecommendations(opportunities: ImprovementOpportunity[]): s
 }
 
 export { buildOutreachMessage, collectOutreachBullets, finalizeOutreachMessage, getSafeLeadIntro, safeLeadName } from '@/features/leads/outreachMessage'
-export { OUTREACH_SENDER, getSenderProfile, buildMessageSignature, getSenderDisplayName, applyMessageSignature } from '@/lib/senderProfile'
+export { OUTREACH_SENDER, getSenderProfile, buildSenderSignature, getSenderDisplayName, resolveOutreachProfile, applyMessageSignature } from '@/lib/senderProfile'
+export { buildSenderSignature as buildMessageSignature } from '@/lib/senderProfile'
 export {
   getNicheOutreachRecommendations,
   resolveNicheRecommendationKey,
