@@ -341,6 +341,7 @@ export const ru = {
     updatedAt: 'Дата обновления',
     status: 'Статус',
     niche: 'Ниша',
+    potential: 'Потенциал',
     asc: 'По возрастанию',
     desc: 'По убыванию',
   },

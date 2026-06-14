@@ -17,7 +17,7 @@ import {
   normalizeEmail,
 } from '@/domain/leadFactory'
 import { appendComment } from '@/domain/leadComments'
-import { matchesPotentialFilter } from '@/lib/leadScore'
+import { computeLeadScore, matchesPotentialFilter } from '@/lib/leadScore'
 
 export class LocalStorageLeadRepository implements ILeadRepository {
   private getLeads(): Lead[] {
@@ -111,6 +111,8 @@ export class LocalStorageLeadRepository implements ILeadRepository {
           return formatNicheDisplay(a.niche).localeCompare(formatNicheDisplay(b.niche), 'ru') * dir
         case 'updatedAt':
           return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * dir
+        case 'potential':
+          return (computeLeadScore(a).score - computeLeadScore(b).score) * dir
         case 'createdAt':
         default:
           return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir

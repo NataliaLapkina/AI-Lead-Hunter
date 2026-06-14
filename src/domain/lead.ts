@@ -171,7 +171,7 @@ export interface LeadFilters {
   tags: string[]
 }
 
-export type LeadSortField = 'name' | 'createdAt' | 'updatedAt' | 'status' | 'niche'
+export type LeadSortField = 'name' | 'createdAt' | 'updatedAt' | 'status' | 'niche' | 'potential'
 export type SortDirection = 'asc' | 'desc'
 
 export interface LeadSort {

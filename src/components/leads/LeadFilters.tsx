@@ -145,6 +145,8 @@ export function LeadFiltersBar({
               <SelectItem value="name-desc">{ru.sort.name} ↓</SelectItem>
               <SelectItem value="status-asc">{ru.sort.status} ↑</SelectItem>
               <SelectItem value="niche-asc">{ru.sort.niche} ↑</SelectItem>
+              <SelectItem value="potential-desc">{ru.sort.potential} ↓</SelectItem>
+              <SelectItem value="potential-asc">{ru.sort.potential} ↑</SelectItem>
             </SelectContent>
           </Select>
         </div>
