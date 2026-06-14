@@ -26,6 +26,8 @@ export function DashboardPage() {
     closeLeadSheet,
     openLeadForm,
     closeLeadForm,
+    leadDetailFocus,
+    leadDetailFocusSeq,
   } = useUIStore()
   const selectedLead = useLead(selectedLeadId)
   const editingLead = useLead(editingLeadId)
@@ -84,6 +86,8 @@ export function DashboardPage() {
         }}
         onUpdateLead={updateLead}
         onAddComment={addComment}
+        focus={leadDetailFocus}
+        focusSeq={leadDetailFocusSeq}
       />
 
       <LeadForm

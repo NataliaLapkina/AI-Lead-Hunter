@@ -20,9 +20,10 @@ interface LeadTableProps {
   leads: Lead[]
   onRowClick: (id: string) => void
   onStatusChange: (id: string, status: LeadStatus) => void
+  onNextActionClick?: (lead: Lead) => void
 }
 
-export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps) {
+export function LeadTable({ leads, onRowClick, onStatusChange, onNextActionClick }: LeadTableProps) {
   if (leads.length === 0) return null
 
   return (
@@ -83,8 +84,12 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
                 <td className="px-4 py-3">
                   <LeadScoreBadge lead={lead} />
                 </td>
-                <td className="px-4 py-3">
-                  <LeadNextActionBadge lead={lead} />
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <LeadNextActionBadge
+                    lead={lead}
+                    interactive={Boolean(onNextActionClick)}
+                    onActivate={onNextActionClick}
+                  />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-1">
@@ -137,7 +142,17 @@ export function LeadTable({ leads, onRowClick, onStatusChange }: LeadTableProps)
                 <div className="flex flex-col items-end gap-1">
                   <LeadStatusBadge status={lead.status} />
                   <LeadScoreBadge lead={lead} />
-                  <LeadNextActionBadge lead={lead} />
+                  <span
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    role="presentation"
+                  >
+                    <LeadNextActionBadge
+                      lead={lead}
+                      interactive={Boolean(onNextActionClick)}
+                      onActivate={onNextActionClick}
+                    />
+                  </span>
                   {(lead.opportunities?.length ?? 0) > 0 && (
                     <Badge variant="warning" className="text-xs">
                       {lead.opportunities!.length} улуч.

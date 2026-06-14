@@ -1,5 +1,6 @@
 import type { Lead } from '@/domain/lead'
 import type { AppSettings } from '@/domain/lead'
+import type { LeadDetailFocus } from '@/lib/leadNextAction'
 import { repositories } from '@/repositories'
 import { create } from 'zustand'
 
@@ -64,7 +65,9 @@ interface UIStore {
   isLeadSheetOpen: boolean
   isLeadFormOpen: boolean
   editingLeadId: string | null
-  openLeadSheet: (id: string) => void
+  leadDetailFocus: LeadDetailFocus | null
+  leadDetailFocusSeq: number
+  openLeadSheet: (id: string, focus?: LeadDetailFocus) => void
   closeLeadSheet: () => void
   openLeadForm: (id?: string) => void
   closeLeadForm: () => void
@@ -75,9 +78,22 @@ export const useUIStore = create<UIStore>((set) => ({
   isLeadSheetOpen: false,
   isLeadFormOpen: false,
   editingLeadId: null,
+  leadDetailFocus: null,
+  leadDetailFocusSeq: 0,
 
-  openLeadSheet: (id) => set({ selectedLeadId: id, isLeadSheetOpen: true }),
-  closeLeadSheet: () => set({ selectedLeadId: null, isLeadSheetOpen: false }),
+  openLeadSheet: (id, focus) =>
+    set((state) => ({
+      selectedLeadId: id,
+      isLeadSheetOpen: true,
+      leadDetailFocus: focus ?? null,
+      leadDetailFocusSeq: focus ? state.leadDetailFocusSeq + 1 : state.leadDetailFocusSeq,
+    })),
+  closeLeadSheet: () =>
+    set({
+      selectedLeadId: null,
+      isLeadSheetOpen: false,
+      leadDetailFocus: null,
+    }),
   openLeadForm: (id) =>
     set({ editingLeadId: id ?? null, isLeadFormOpen: true }),
   closeLeadForm: () => set({ editingLeadId: null, isLeadFormOpen: false }),

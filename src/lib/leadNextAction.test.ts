@@ -40,6 +40,13 @@ describe('computeLeadNextAction', () => {
     const action = computeLeadNextAction(createLead('no_reply'))
     expect(action.key).toBe('follow_up')
     expect(action.color).toBe('red')
+    expect(action.focus).toBe('message')
+  })
+
+  it('maps replied to proposal tab', () => {
+    const action = computeLeadNextAction(createLead('replied'))
+    expect(action.focus).toBe('proposal')
+    expect(action.tooltip).toBe('Подготовить КП')
   })
 })
 

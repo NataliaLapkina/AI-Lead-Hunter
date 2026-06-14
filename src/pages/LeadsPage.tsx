@@ -17,7 +17,8 @@ import { parseLeadsFromJson } from '@/features/export/jsonExporter'
 import { downloadBlob } from '@/lib/utils'
 import { ru, t } from '@/i18n/ru'
 import { toast } from 'sonner'
-import type { CreateLeadInput } from '@/domain/lead'
+import type { CreateLeadInput, Lead } from '@/domain/lead'
+import { computeLeadNextAction } from '@/lib/leadNextAction'
 
 export function LeadsPage() {
   const {
@@ -51,6 +52,8 @@ export function LeadsPage() {
     closeLeadSheet,
     openLeadForm,
     closeLeadForm,
+    leadDetailFocus,
+    leadDetailFocusSeq,
   } = useUIStore()
 
   const selectedLead = useLead(selectedLeadId)
@@ -83,6 +86,11 @@ export function LeadsPage() {
     )
 
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleNextAction = (lead: Lead) => {
+    const action = computeLeadNextAction(lead)
+    openLeadSheet(lead.id, action.focus)
   }
 
   const handleCreateLead = async (data: CreateLeadInput) => {
@@ -156,6 +164,7 @@ export function LeadsPage() {
               <LeadTable
                 leads={filteredLeads}
                 onRowClick={openLeadSheet}
+                onNextActionClick={handleNextAction}
                 onStatusChange={async (id, status) => {
                   await updateStatus(id, status)
                   toast.success(ru.toast.statusChanged)
@@ -184,6 +193,8 @@ export function LeadsPage() {
         }}
         onUpdateLead={updateLead}
         onAddComment={addComment}
+        focus={leadDetailFocus}
+        focusSeq={leadDetailFocusSeq}
       />
 
       <LeadForm

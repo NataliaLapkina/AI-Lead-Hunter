@@ -11,6 +11,8 @@ export type NextActionKey =
 
 export type NextActionColor = 'red' | 'yellow' | 'green' | 'blue' | 'muted'
 
+export type LeadDetailFocus = 'overview' | 'message' | 'history' | 'proposal' | 'review'
+
 export interface LeadNextAction {
   key: NextActionKey
   label: string
@@ -18,6 +20,8 @@ export interface LeadNextAction {
   emoji: string
   recommendedDeadline: string | null
   color: NextActionColor
+  tooltip: string
+  focus: LeadDetailFocus
 }
 
 const NEXT_ACTION_BY_STATUS: Record<LeadStatus, NextActionKey> = {
@@ -43,6 +47,8 @@ const ACTION_CONFIG: Record<
     emoji: '📝',
     recommendedDeadline: 'Сегодня',
     color: 'muted',
+    tooltip: 'Открыть карточку',
+    focus: 'overview',
   },
   send_first_message: {
     label: 'Отправить первое сообщение',
@@ -50,6 +56,8 @@ const ACTION_CONFIG: Record<
     emoji: '📩',
     recommendedDeadline: 'Сегодня',
     color: 'blue',
+    tooltip: 'Открыть сообщение',
+    focus: 'message',
   },
   wait_for_reply: {
     label: 'Ожидать ответ',
@@ -57,6 +65,8 @@ const ACTION_CONFIG: Record<
     emoji: '⏳',
     recommendedDeadline: '3 дня',
     color: 'yellow',
+    tooltip: 'Посмотреть историю',
+    focus: 'history',
   },
   prepare_proposal: {
     label: 'Подготовить предложение',
@@ -64,6 +74,8 @@ const ACTION_CONFIG: Record<
     emoji: '📄',
     recommendedDeadline: 'Сегодня',
     color: 'yellow',
+    tooltip: 'Подготовить КП',
+    focus: 'proposal',
   },
   request_review: {
     label: 'Запросить отзыв',
@@ -71,6 +83,8 @@ const ACTION_CONFIG: Record<
     emoji: '⭐',
     recommendedDeadline: null,
     color: 'green',
+    tooltip: 'Отправить запрос отзыва',
+    focus: 'review',
   },
   follow_up: {
     label: 'Повторное касание',
@@ -78,6 +92,8 @@ const ACTION_CONFIG: Record<
     emoji: '📞',
     recommendedDeadline: 'Сегодня',
     color: 'red',
+    tooltip: 'Открыть сообщение',
+    focus: 'message',
   },
   archive: {
     label: 'Архивировать',
@@ -85,6 +101,8 @@ const ACTION_CONFIG: Record<
     emoji: '📦',
     recommendedDeadline: null,
     color: 'muted',
+    tooltip: 'Открыть карточку',
+    focus: 'overview',
   },
 }
 
@@ -96,6 +114,10 @@ export function computeLeadNextAction(lead: Lead): LeadNextAction {
     key,
     ...config,
   }
+}
+
+export function getNextActionFocus(key: NextActionKey): LeadDetailFocus {
+  return ACTION_CONFIG[key].focus
 }
 
 export const ACTION_REQUIRED_IN_PROGRESS_STATUSES: LeadStatus[] = ['replied', 'meeting']

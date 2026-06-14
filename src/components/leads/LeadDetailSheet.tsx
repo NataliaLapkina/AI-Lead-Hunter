@@ -19,6 +19,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
+import type { LeadDetailFocus } from '@/lib/leadNextAction'
+
 interface LeadDetailSheetProps {
   lead: Lead | null
   open: boolean
@@ -28,6 +30,8 @@ interface LeadDetailSheetProps {
   onDelete: (id: string) => void
   onUpdateLead: (id: string, data: UpdateLeadInput) => Promise<Lead>
   onAddComment: (id: string, text: string) => Promise<void>
+  focus?: LeadDetailFocus | null
+  focusSeq?: number
 }
 
 export function LeadDetailSheet({
@@ -39,6 +43,8 @@ export function LeadDetailSheet({
   onDelete,
   onUpdateLead,
   onAddComment,
+  focus = null,
+  focusSeq = 0,
 }: LeadDetailSheetProps) {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -64,6 +70,8 @@ export function LeadDetailSheet({
             onDelete={() => setDeleteOpen(true)}
             onUpdateLead={onUpdateLead}
             onAddComment={onAddComment}
+            focus={focus}
+            focusSeq={focusSeq}
           />
         </SheetContent>
       </Sheet>

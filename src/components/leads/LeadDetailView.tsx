@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Lead, LeadStatus, UpdateLeadInput } from '@/domain/lead'
+import type { LeadDetailFocus } from '@/lib/leadNextAction'
 import { LEAD_STATUSES } from '@/lib/constants'
 import { getSourceLabel, getStatusLabel, getNicheLabel, ru } from '@/i18n/ru'
 import { formatDateTime, copyToClipboard } from '@/lib/utils'
@@ -10,6 +11,10 @@ import {
   buildRecommendations,
   finalizeOutreachMessage,
 } from '@/features/leads/improvements'
+import {
+  buildProposalTemplate,
+  buildReviewRequestTemplate,
+} from '@/features/leads/workflowTemplates'
 import { ImprovementBadges } from '@/components/leads/ImprovementChecklist'
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
@@ -59,6 +64,8 @@ interface LeadDetailViewProps {
   onUpdateLead: (id: string, data: UpdateLeadInput) => Promise<Lead>
   onAddComment: (id: string, text: string) => Promise<void>
   showFullPageLink?: boolean
+  focus?: LeadDetailFocus | null
+  focusSeq?: number
 }
 
 export function LeadDetailView({
@@ -69,10 +76,13 @@ export function LeadDetailView({
   onUpdateLead,
   onAddComment,
   showFullPageLink = true,
+  focus = null,
+  focusSeq = 0,
 }: LeadDetailViewProps) {
   const { settings, fetchSettings } = useSettingsStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAuditing, setIsAuditing] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     void fetchSettings()
@@ -85,6 +95,37 @@ export function LeadDetailView({
     ? finalizeOutreachMessage(lead.generatedMessage, lead, settings?.profile)
     : fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
+  const proposalTemplate = buildProposalTemplate(lead, settings?.profile)
+  const reviewTemplate = buildReviewRequestTemplate(lead, settings?.profile)
+
+  useEffect(() => {
+    if (!focus) return
+
+    const tabByFocus: Record<LeadDetailFocus, string> = {
+      overview: 'overview',
+      message: 'overview',
+      history: 'history',
+      proposal: 'proposal',
+      review: 'review',
+    }
+
+    setActiveTab(tabByFocus[focus])
+
+    if (focus === 'message') {
+      const timer = window.setTimeout(() => {
+        document.getElementById('lead-ai-message')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+      }, 150)
+      return () => window.clearTimeout(timer)
+    }
+  }, [focus, focusSeq, lead.id])
+
+  const handleCopyText = async (text: string) => {
+    await copyToClipboard(text)
+    toast.success(ru.toast.copySuccess)
+  }
 
   const handleCopyMessage = async () => {
     await copyToClipboard(message)
@@ -159,15 +200,21 @@ export function LeadDetailView({
         )}
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList className="w-full">
-          <TabsTrigger value="overview" className="flex-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full flex-wrap h-auto">
+          <TabsTrigger value="overview" className="flex-1 min-w-[4.5rem]">
             {ru.leads.tabOverview}
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1">
+          <TabsTrigger value="proposal" className="flex-1 min-w-[3rem]">
+            {ru.leads.tabProposal}
+          </TabsTrigger>
+          <TabsTrigger value="review" className="flex-1 min-w-[3rem]">
+            {ru.leads.tabReview}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 min-w-[4rem]">
             {ru.leads.tabHistory}
           </TabsTrigger>
-          <TabsTrigger value="comments" className="flex-1">
+          <TabsTrigger value="comments" className="flex-1 min-w-[4rem]">
             {ru.leads.tabComments}
           </TabsTrigger>
         </TabsList>
@@ -353,7 +400,7 @@ export function LeadDetailView({
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div id="lead-ai-message" className="space-y-2 scroll-mt-4">
             <p className="text-sm font-medium">{ru.leads.copyMessage}</p>
             <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
               {message}
@@ -368,6 +415,41 @@ export function LeadDetailView({
                 {ru.leads.copyMessage}
               </Button>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="proposal" className="space-y-4">
+          <p className="text-sm text-muted-foreground">{ru.leads.proposalHint}</p>
+          <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
+            {proposalTemplate}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCopyText(proposalTemplate)}
+            className="gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            {ru.common.copy}
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="review" className="space-y-4">
+          <p className="text-sm text-muted-foreground">{ru.leads.reviewHint}</p>
+          <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
+            {reviewTemplate}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleCopyText(reviewTemplate)}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              {ru.common.copy}
+            </Button>
+            <LeadOutreachActions lead={lead} message={reviewTemplate} />
           </div>
         </TabsContent>
 
