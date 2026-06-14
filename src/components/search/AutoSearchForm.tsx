@@ -4,6 +4,9 @@ import { AUTO_SEARCH_SOURCES } from '@/lib/constants'
 import { autoSearchFormSchema } from '@/domain/validation'
 import { getSourceLabel, ru } from '@/i18n/ru'
 import type { AutoSearchParams, AutoSearchSource } from '@/domain/lead'
+import { useSearchNiche } from '@/features/search/SearchNicheContext'
+import { getSearchNichePresets } from '@/lib/nichePresets'
+import { useSettingsStore } from '@/stores'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,12 +25,14 @@ interface AutoSearchFormProps {
 }
 
 export function AutoSearchForm({ onSearch, isSearching }: AutoSearchFormProps) {
-  const [niche, setNiche] = useState('')
-  const [city, setCity] = useState('')
+  const { settings } = useSettingsStore()
+  const { niche, city, setCity, syncPresetFromNiche } = useSearchNiche()
   const [source, setSource] = useState<AutoSearchSource>('avito')
   const [count, setCount] = useState('5')
   const [linksText, setLinksText] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const presets = getSearchNichePresets(settings?.nichePresets ?? [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +71,7 @@ export function AutoSearchForm({ onSearch, isSearching }: AutoSearchFormProps) {
           <Input
             id="auto-niche"
             value={niche}
-            onChange={(e) => setNiche(e.target.value)}
+            onChange={(e) => syncPresetFromNiche(e.target.value, presets)}
             placeholder={ru.autoSearch.nichePlaceholder}
           />
           {errors.niche && <p className="text-xs text-destructive">{errors.niche}</p>}
@@ -124,7 +129,7 @@ export function AutoSearchForm({ onSearch, isSearching }: AutoSearchFormProps) {
         <p className="text-xs text-muted-foreground">{ru.autoSearch.linksHint}</p>
       </div>
 
-      <Button type="submit" disabled={isSearching} className="gap-2">
+      <Button type="submit" disabled={!niche.trim() || isSearching} className="gap-2">
         {isSearching ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (

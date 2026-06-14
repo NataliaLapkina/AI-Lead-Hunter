@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { LEAD_SOURCES } from '@/lib/constants'
 import { getSourceLabel, ru } from '@/i18n/ru'
+import { useSearchNiche } from '@/features/search/SearchNicheContext'
+import { getSearchNichePresets } from '@/lib/nichePresets'
+import { useSettingsStore } from '@/stores'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,9 +22,11 @@ interface NicheSearchFormProps {
 }
 
 export function NicheSearchForm({ onGenerate, isGenerating }: NicheSearchFormProps) {
-  const [niche, setNiche] = useState('')
-  const [city, setCity] = useState('')
+  const { settings } = useSettingsStore()
+  const { niche, city, setCity, syncPresetFromNiche } = useSearchNiche()
   const [source, setSource] = useState<string>('')
+
+  const presets = getSearchNichePresets(settings?.nichePresets ?? [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +45,7 @@ export function NicheSearchForm({ onGenerate, isGenerating }: NicheSearchFormPro
         <Input
           id="search-niche"
           value={niche}
-          onChange={(e) => setNiche(e.target.value)}
+          onChange={(e) => syncPresetFromNiche(e.target.value, presets)}
           placeholder={ru.search.nichePlaceholder}
         />
       </div>

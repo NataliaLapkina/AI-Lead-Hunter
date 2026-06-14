@@ -1,11 +1,24 @@
+import { useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+import { NicheSuggestions } from '@/components/search/NicheSuggestions'
+import { SearchNicheProvider, useSearchNiche } from '@/features/search/SearchNicheContext'
+import { getSearchNichePresets } from '@/lib/nichePresets'
+import { useSettingsStore } from '@/stores'
 import { ru } from '@/i18n/ru'
 import { cn } from '@/lib/utils'
 
-export function SearchLayout() {
+function SearchLayoutContent() {
   const location = useLocation()
   const isAuto = location.pathname.includes('/search/auto')
+  const { settings, fetchSettings } = useSettingsStore()
+  const { selectedPresetId, selectPreset } = useSearchNiche()
+
+  useEffect(() => {
+    void fetchSettings()
+  }, [fetchSettings])
+
+  const presets = getSearchNichePresets(settings?.nichePresets ?? [])
 
   return (
     <AppShell
@@ -33,8 +46,23 @@ export function SearchLayout() {
             {ru.search.tabAuto}
           </Link>
         </div>
+
+        <NicheSuggestions
+          presets={presets}
+          selectedPresetId={selectedPresetId}
+          onSelect={selectPreset}
+        />
+
         <Outlet />
       </div>
     </AppShell>
+  )
+}
+
+export function SearchLayout() {
+  return (
+    <SearchNicheProvider>
+      <SearchLayoutContent />
+    </SearchNicheProvider>
   )
 }
