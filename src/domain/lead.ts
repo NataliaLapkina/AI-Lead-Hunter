@@ -132,6 +132,7 @@ export interface AnalyticsSummary {
   byNiche: Record<string, number>
   bySource: Record<LeadSource, number>
   byPotential: Record<LeadPotentialLevel, number>
+  requiringAttention: number
   conversionRate: number
   recentActivity: LeadActivity[]
 }

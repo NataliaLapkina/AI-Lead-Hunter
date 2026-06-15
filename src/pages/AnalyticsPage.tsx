@@ -38,7 +38,7 @@ export function AnalyticsPage() {
         />
       ) : (
         <div className="space-y-6">
-          <StatsCards analytics={analytics} />
+          <StatsCards analytics={analytics} interactive />
           <div className="grid gap-6 lg:grid-cols-2">
             <StatusFunnel analytics={analytics} />
             <NicheDistribution analytics={analytics} />

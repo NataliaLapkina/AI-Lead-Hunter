@@ -282,6 +282,7 @@ export const ru = {
     potentialHigh: 'Высокий потенциал',
     potentialMedium: 'Средний потенциал',
     potentialLow: 'Низкий потенциал',
+    requiringAttention: 'Требуют внимания',
   },
   potential: {
     low: 'низкий',

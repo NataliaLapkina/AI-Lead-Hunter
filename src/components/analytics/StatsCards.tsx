@@ -14,6 +14,7 @@ import {
   Minus,
   AlertCircle,
   ArrowRight,
+  BellRing,
 } from 'lucide-react'
 
 interface StatsCardsProps {
@@ -29,6 +30,9 @@ interface StatCardConfig {
   bg: string
   href?: string
 }
+
+const INTERACTIVE_CARD_CLASS =
+  'cursor-pointer transition-all duration-150 hover:scale-[1.02] hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
 
 function StatCard({
   stat,
@@ -60,10 +64,7 @@ function StatCard({
       tabIndex={isClickable ? 0 : undefined}
       onClick={isClickable ? handleActivate : undefined}
       onKeyDown={isClickable ? handleKeyDown : undefined}
-      className={cn(
-        isClickable &&
-          'cursor-pointer transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      )}
+      className={cn(isClickable && INTERACTIVE_CARD_CLASS)}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -134,7 +135,7 @@ export function StatsCards({ analytics, interactive = false }: StatsCardsProps) 
     },
   ]
 
-  const potentialStats: StatCardConfig[] = [
+  const secondaryStats: StatCardConfig[] = [
     {
       label: ru.analytics.potentialHigh,
       value: analytics.byPotential.high,
@@ -159,6 +160,14 @@ export function StatsCards({ analytics, interactive = false }: StatsCardsProps) 
       bg: 'bg-rose-50',
       href: '/leads?potential=low',
     },
+    {
+      label: ru.analytics.requiringAttention,
+      value: analytics.requiringAttention,
+      icon: BellRing,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
+      href: '/leads?attention=overdue',
+    },
   ]
 
   return (
@@ -168,8 +177,8 @@ export function StatsCards({ analytics, interactive = false }: StatsCardsProps) 
           <StatCard key={stat.label} stat={stat} interactive={interactive} />
         ))}
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {potentialStats.map((stat) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {secondaryStats.map((stat) => (
           <StatCard key={stat.label} stat={stat} interactive={interactive} />
         ))}
       </div>

@@ -8,6 +8,7 @@ import type {
 import { LEAD_STATUSES, LEAD_SOURCES } from '@/lib/constants'
 import { formatNicheDisplay, nicheDisplayKey } from '@/lib/nicheDisplay'
 import { computeLeadScore } from '@/lib/leadScore'
+import { countLeadsRequiringAttention } from '@/lib/leadAttention'
 
 export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
   const byStatus = Object.fromEntries(
@@ -44,6 +45,7 @@ export function computeAnalytics(leads: Lead[]): AnalyticsSummary {
     byNiche,
     bySource,
     byPotential,
+    requiringAttention: countLeadsRequiringAttention(leads),
     conversionRate,
     recentActivity: allActivity.slice(0, 20),
   }
