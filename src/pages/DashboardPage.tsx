@@ -3,6 +3,7 @@ import { Users } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { StatsCards } from '@/components/analytics/StatsCards'
 import { QuickActions, RecentLeads, ActionRequired } from '@/components/dashboard/DashboardWidgets'
+import { RequiresAttention } from '@/components/dashboard/RequiresAttention'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { LeadDetailSheet } from '@/components/leads/LeadDetailSheet'
 import { LeadForm } from '@/components/leads/LeadForm'
@@ -11,7 +12,8 @@ import { useLeads, useLead } from '@/features/leads/hooks/useLeads'
 import { useUIStore } from '@/stores'
 import { ru } from '@/i18n/ru'
 import { toast } from 'sonner'
-import type { CreateLeadInput } from '@/domain/lead'
+import { computeLeadNextAction } from '@/lib/leadNextAction'
+import type { CreateLeadInput, Lead } from '@/domain/lead'
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -59,6 +61,13 @@ export function DashboardPage() {
         ) : (
           <div className="space-y-6">
             <StatsCards analytics={analytics} interactive />
+            <RequiresAttention
+              leads={leads}
+              onLeadClick={(lead: Lead) => {
+                const action = computeLeadNextAction(lead)
+                openLeadSheet(lead.id, action.focus)
+              }}
+            />
             <ActionRequired leads={leads} />
             <div className="grid gap-6 lg:grid-cols-2">
               <QuickActions onAddLead={() => openLeadForm()} />

@@ -113,6 +113,8 @@ export const ru = {
     actionRequiredNew: 'Новые',
     actionRequiredNoReply: 'Не ответил',
     actionRequiredInProgress: 'В работе',
+    requiresAttention: 'Требуют внимания',
+    requiresAttentionEmpty: 'Сегодня просроченных действий нет.',
     emptyTitle: 'Начните с первого поиска',
     emptyDescription: 'Создайте поисковые запросы для ниши или добавьте первого лида вручную.',
   },
