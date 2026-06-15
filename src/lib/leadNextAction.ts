@@ -1,17 +1,12 @@
 import type { Lead, LeadStatus } from '@/domain/lead'
+import { computeNextActionDeadline } from '@/lib/leadNextActionDeadline'
+import type {
+  LeadDetailFocus,
+  NextActionColor,
+  NextActionKey,
+} from '@/lib/leadNextActionTypes'
 
-export type NextActionKey =
-  | 'prepare_lead'
-  | 'send_first_message'
-  | 'wait_for_reply'
-  | 'prepare_proposal'
-  | 'request_review'
-  | 'follow_up'
-  | 'archive'
-
-export type NextActionColor = 'red' | 'yellow' | 'green' | 'blue' | 'muted'
-
-export type LeadDetailFocus = 'overview' | 'message' | 'history' | 'proposal' | 'review'
+export type { LeadDetailFocus, NextActionColor, NextActionKey } from '@/lib/leadNextActionTypes'
 
 export interface LeadNextAction {
   key: NextActionKey
@@ -19,6 +14,9 @@ export interface LeadNextAction {
   shortLabel: string
   emoji: string
   recommendedDeadline: string | null
+  dueAt: string | null
+  isOverdue: boolean
+  overdueDays: number
   color: NextActionColor
   tooltip: string
   focus: LeadDetailFocus
@@ -37,15 +35,16 @@ const NEXT_ACTION_BY_STATUS: Record<LeadStatus, NextActionKey> = {
   archived: 'archive',
 }
 
-const ACTION_CONFIG: Record<
-  NextActionKey,
-  Omit<LeadNextAction, 'key'>
-> = {
+type NextActionConfig = Omit<
+  LeadNextAction,
+  'key' | 'recommendedDeadline' | 'dueAt' | 'isOverdue' | 'overdueDays'
+>
+
+const ACTION_CONFIG: Record<NextActionKey, NextActionConfig> = {
   prepare_lead: {
     label: 'Подготовить лид',
     shortLabel: 'Подготовить лид',
     emoji: '📝',
-    recommendedDeadline: 'Сегодня',
     color: 'muted',
     tooltip: 'Открыть карточку',
     focus: 'overview',
@@ -54,7 +53,6 @@ const ACTION_CONFIG: Record<
     label: 'Отправить первое сообщение',
     shortLabel: 'Первое сообщение',
     emoji: '📩',
-    recommendedDeadline: 'Сегодня',
     color: 'blue',
     tooltip: 'Открыть сообщение',
     focus: 'message',
@@ -63,7 +61,6 @@ const ACTION_CONFIG: Record<
     label: 'Ожидать ответ',
     shortLabel: 'Ожидание ответа',
     emoji: '⏳',
-    recommendedDeadline: '3 дня',
     color: 'yellow',
     tooltip: 'Посмотреть историю',
     focus: 'history',
@@ -72,7 +69,6 @@ const ACTION_CONFIG: Record<
     label: 'Подготовить предложение',
     shortLabel: 'Подготовить КП',
     emoji: '📄',
-    recommendedDeadline: 'Сегодня',
     color: 'yellow',
     tooltip: 'Подготовить КП',
     focus: 'proposal',
@@ -81,7 +77,6 @@ const ACTION_CONFIG: Record<
     label: 'Запросить отзыв',
     shortLabel: 'Запросить отзыв',
     emoji: '⭐',
-    recommendedDeadline: null,
     color: 'green',
     tooltip: 'Отправить запрос отзыва',
     focus: 'review',
@@ -90,7 +85,6 @@ const ACTION_CONFIG: Record<
     label: 'Повторное касание',
     shortLabel: 'Повторный контакт',
     emoji: '📞',
-    recommendedDeadline: 'Сегодня',
     color: 'red',
     tooltip: 'Открыть сообщение',
     focus: 'message',
@@ -99,20 +93,33 @@ const ACTION_CONFIG: Record<
     label: 'Архивировать',
     shortLabel: 'Архивировать',
     emoji: '📦',
-    recommendedDeadline: null,
     color: 'muted',
     tooltip: 'Открыть карточку',
     focus: 'overview',
   },
 }
 
-export function computeLeadNextAction(lead: Lead): LeadNextAction {
+export function computeLeadNextAction(
+  lead: Lead,
+  referenceDate: Date = new Date(),
+): LeadNextAction {
   const key = NEXT_ACTION_BY_STATUS[lead.status]
   const config = ACTION_CONFIG[key]
+  const deadline = computeNextActionDeadline(lead, key, referenceDate)
+
+  const tooltip = deadline.recommendedDeadline
+    ? `${config.tooltip} · ${deadline.recommendedDeadline}`
+    : config.tooltip
 
   return {
     key,
     ...config,
+    color: deadline.isOverdue ? 'red' : config.color,
+    tooltip,
+    dueAt: deadline.dueAt,
+    isOverdue: deadline.isOverdue,
+    overdueDays: deadline.overdueDays,
+    recommendedDeadline: deadline.recommendedDeadline,
   }
 }
 
