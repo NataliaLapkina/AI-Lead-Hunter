@@ -20,6 +20,7 @@ import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
 import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
+import { LeadMessageVariants } from '@/components/leads/LeadMessageVariants'
 import { LeadPotentialPanel } from '@/components/leads/LeadPotentialPanel'
 import { LeadNextActionPanel } from '@/components/leads/LeadNextActionPanel'
 import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
@@ -51,6 +52,10 @@ import { toast } from 'sonner'
 import { generateAIMessage } from '@/services/ai/AIMessageGenerator'
 import { hasOpenAIKey } from '@/services/ai/openaiClient'
 import {
+  buildRegeneratedMessageUpdate,
+  buildRestoreMessageUpdate,
+} from '@/lib/leadMessageHistory'
+import {
   auditWebsite,
   enhanceAuditWithAI,
   findingsToOpportunities,
@@ -81,6 +86,7 @@ export function LeadDetailView({
 }: LeadDetailViewProps) {
   const { settings, fetchSettings } = useSettingsStore()
   const [isGenerating, setIsGenerating] = useState(false)
+  const [restoringVariantId, setRestoringVariantId] = useState<string | null>(null)
   const [isAuditing, setIsAuditing] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -90,9 +96,19 @@ export function LeadDetailView({
 
   const apiKey = settings?.integrations.openaiApiKey
 
-  const fallbackMessage = buildOutreachMessage(lead, settings?.profile, settings?.aiSettings)
+  const fallbackMessage = buildOutreachMessage(
+    lead,
+    settings?.profile,
+    settings?.aiSettings,
+    settings?.aiProfile,
+  )
   const message = lead.generatedMessage
-    ? finalizeOutreachMessage(lead.generatedMessage, lead, settings?.profile, settings?.aiSettings)
+    ? finalizeOutreachMessage(
+        lead.generatedMessage,
+        lead,
+        settings?.profile,
+        settings?.aiSettings,
+      )
     : fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
   const proposalTemplate = buildProposalTemplate(lead, settings?.profile)
@@ -132,24 +148,52 @@ export function LeadDetailView({
     toast.success(ru.toast.copySuccess)
   }
 
-  const handleGenerateAI = async () => {
+  const generateMessage = async (regenerate: boolean) => {
     if (!hasOpenAIKey(apiKey)) {
       toast.error(ru.settings.openaiRequired)
       return
     }
+
     setIsGenerating(true)
     try {
       const generated = await generateAIMessage(apiKey!, {
         lead,
         senderProfile: settings?.profile,
         aiSettings: settings?.aiSettings,
+        aiProfile: settings?.aiProfile,
       })
-      await onUpdateLead(lead.id, { generatedMessage: generated })
+      const update = buildRegeneratedMessageUpdate(lead, generated, {
+        archiveCurrent: regenerate,
+      })
+      await onUpdateLead(lead.id, update)
       toast.success(ru.leads.messageGenerated)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : ru.toast.error)
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const handleGenerateAI = async () => {
+    await generateMessage(false)
+  }
+
+  const handleRegenerateAI = async () => {
+    await generateMessage(true)
+  }
+
+  const handleRestoreVariant = async (variantId: string) => {
+    const update = buildRestoreMessageUpdate(lead, variantId)
+    if (!update) return
+
+    setRestoringVariantId(variantId)
+    try {
+      await onUpdateLead(lead.id, update)
+      toast.success(ru.leads.messageRestored)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ru.toast.error)
+    } finally {
+      setRestoringVariantId(null)
     }
   }
 
@@ -406,6 +450,12 @@ export function LeadDetailView({
 
           <div id="lead-ai-message" className="space-y-2 scroll-mt-4">
             <p className="text-sm font-medium">{ru.leads.copyMessage}</p>
+            {isGenerating && (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {ru.leads.generatingAIMessage}
+              </p>
+            )}
             <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
               {message}
             </div>
@@ -413,12 +463,31 @@ export function LeadDetailView({
               <p className="text-xs font-medium text-muted-foreground">{ru.leads.sendVia}</p>
               <LeadOutreachActions lead={lead} message={message} />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={handleCopyMessage} className="gap-2">
                 <Copy className="h-4 w-4" />
                 {ru.leads.copyMessage}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void handleRegenerateAI()}
+                disabled={isGenerating || !hasOpenAIKey(apiKey)}
+                className="gap-2"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {ru.leads.regenerateAIMessage}
+              </Button>
             </div>
+            <LeadMessageVariants
+              lead={lead}
+              onRestore={(variantId) => void handleRestoreVariant(variantId)}
+              restoringId={restoringVariantId}
+            />
           </div>
         </TabsContent>
 

@@ -22,6 +22,7 @@ describe('normalizeAISettings', () => {
         messageGoal: 'sell',
         offerTopic: 'CRM-система',
         useAutoSignature: false,
+        tone: 'assertive',
       }),
     ).toEqual({
       communicationStyle: 'premium',
@@ -29,7 +30,12 @@ describe('normalizeAISettings', () => {
       messageGoal: 'sell',
       offerTopic: 'CRM-система',
       useAutoSignature: false,
+      tone: 'assertive',
     })
+  })
+
+  it('defaults tone to neutral', () => {
+    expect(normalizeAISettings(null).tone).toBe('neutral')
   })
 })
 
@@ -46,6 +52,15 @@ describe('buildAISettingsPromptSection', () => {
     expect(prompt).toContain('запросить')
     expect(prompt).toContain('аудит сайта')
     expect(prompt).toContain('автоподпись')
+  })
+
+  it('includes tone in prompt', () => {
+    const prompt = buildAISettingsPromptSection({
+      ...DEFAULT_AI_SETTINGS,
+      tone: 'soft',
+    })
+
+    expect(prompt).toContain('мягкий')
   })
 
   it('omits signature instruction when disabled', () => {

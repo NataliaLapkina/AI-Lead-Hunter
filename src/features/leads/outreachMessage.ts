@@ -1,4 +1,4 @@
-import type { ImprovementOpportunity, Lead, AppProfile, AISettings, AIMessageGoal } from '@/domain/lead'
+import type { ImprovementOpportunity, Lead, AppProfile, AISettings, AIMessageGoal, AIProfile } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
 import { isTechnicalLeadName, sanitizeLeadName } from '@/lib/leadLinks'
@@ -21,6 +21,7 @@ import {
   normalizeAISettings,
   STYLE_GREETINGS,
 } from '@/lib/aiMessageSettings'
+import { buildPositioningBlock, normalizeAIProfile } from '@/lib/aiProfile'
 
 export { OUTREACH_SENDER, getSenderProfile, buildSenderSignature, getSenderDisplayName, resolveOutreachProfile }
 export { buildSenderSignature as buildMessageSignature } from '@/lib/senderProfile'
@@ -175,8 +176,10 @@ export function buildOutreachMessage(
   lead: Lead,
   senderProfile?: Partial<AppProfile>,
   aiSettings?: Partial<AISettings> | null,
+  aiProfile?: Partial<AIProfile> | null,
 ): string {
   const settings = normalizeAISettings(aiSettings)
+  const profile = normalizeAIProfile(aiProfile)
   const sender = getSenderProfile(senderProfile)
   const displayName =
     getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
@@ -184,18 +187,21 @@ export function buildOutreachMessage(
   const bullets = collectOutreachBullets(lead).slice(0, LENGTH_BULLET_LIMIT[settings.messageLength])
   const bulletBlock = bullets.map((b) => `• ${b}`).join('\n')
   const opening = getOpeningLine(lead, settings.messageGoal)
+  const positioning = buildPositioningBlock(profile)
   const consequences = getConsequencesLine(settings.communicationStyle, settings.messageLength)
   const valueLine = getValueLine(settings.communicationStyle, settings.messageLength)
   const closing = getClosingLine(
     settings.messageGoal,
     settings.offerTopic,
     settings.messageLength,
+    settings.tone,
   )
 
   const body = [
     greeting,
     `Меня зовут ${displayName}.`,
     getSpecializationBlock(sender, settings),
+    positioning,
     opening,
     bulletBlock,
     consequences,

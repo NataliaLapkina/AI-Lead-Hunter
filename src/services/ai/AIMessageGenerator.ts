@@ -9,22 +9,25 @@ import {
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { getNicheLabel } from '@/i18n/ru'
 import { getSenderDisplayName, buildSenderSignature, getSenderProfile } from '@/lib/senderProfile'
-import type { AppProfile, AISettings } from '@/domain/lead'
+import type { AppProfile, AISettings, AIProfile } from '@/domain/lead'
 import { buildAISettingsPromptSection, normalizeAISettings } from '@/lib/aiMessageSettings'
+import { buildAIProfilePromptSection, normalizeAIProfile } from '@/lib/aiProfile'
 import { callOpenAI } from './openaiClient'
 
 export interface AIMessageInput {
   lead: Lead
   senderProfile?: Partial<AppProfile>
   aiSettings?: Partial<AISettings> | null
+  aiProfile?: Partial<AIProfile> | null
 }
 
 export async function generateAIMessage(
   apiKey: string,
   input: AIMessageInput,
 ): Promise<string> {
-  const { lead, senderProfile, aiSettings } = input
+  const { lead, senderProfile, aiSettings, aiProfile } = input
   const settings = normalizeAISettings(aiSettings)
+  const positioning = normalizeAIProfile(aiProfile)
   const sender = getSenderProfile(senderProfile)
   const displayName = getSenderDisplayName(sender)
 
@@ -34,7 +37,7 @@ export async function generateAIMessage(
 
   const nicheBullets = collectOutreachBullets(lead)
   const auditSummary = lead.siteAudit?.summary ?? ''
-  const referenceMessage = buildOutreachMessage(lead, senderProfile, settings)
+  const referenceMessage = buildOutreachMessage(lead, senderProfile, settings, positioning)
   const signature = buildSenderSignature(senderProfile)
   const companyPhrase = getSafeLeadIntro(lead)
   const outreachLeadName = safeLeadName(lead)
@@ -59,7 +62,9 @@ ${settings.useAutoSignature ? `- Подпись в конце ТОЧНО в та
 - Без эмодзи
 
 ПАРАМЕТРЫ ГЕНЕРАЦИИ:
-${buildAISettingsPromptSection(settings)}`
+${buildAISettingsPromptSection(settings)}
+
+${buildAIProfilePromptSection(positioning)}`
 
   const user = `Напиши персонализированное сообщение для клиента.
 

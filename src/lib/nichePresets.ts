@@ -3,6 +3,7 @@ import { DEFAULT_NICHE_PRESETS, USER_NICHE_PRESETS } from './constants'
 import { normalizeNicheName } from './nicheDisplay'
 import { normalizeAppProfile } from './senderProfile'
 import { normalizeAISettings } from './aiMessageSettings'
+import { normalizeAIProfile } from './aiProfile'
 
 const DEFAULT_NICHE_IDS = new Set<string>(DEFAULT_NICHE_PRESETS.map((n) => n.id))
 
@@ -81,5 +82,6 @@ export function normalizeAppSettings(
     },
     nichePresets: normalizeNichePresets(raw.nichePresets),
     aiSettings: normalizeAISettings(raw.aiSettings, fallback.aiSettings),
+    aiProfile: normalizeAIProfile(raw.aiProfile, fallback.aiProfile),
   }
 }

@@ -3,6 +3,7 @@ import type {
   AIMessageGoal,
   AIMessageLength,
   AISettings,
+  AITone,
   Lead,
 } from '@/domain/lead'
 
@@ -23,12 +24,15 @@ export const AI_MESSAGE_GOALS: AIMessageGoal[] = [
   'reactivation',
 ]
 
+export const AI_TONES: AITone[] = ['soft', 'neutral', 'assertive']
+
 export const DEFAULT_AI_SETTINGS: AISettings = {
   communicationStyle: 'friendly',
   messageLength: 'medium',
   messageGoal: 'introduction',
   offerTopic: 'создание сайтов, AI-боты, автоматизация бизнеса',
   useAutoSignature: true,
+  tone: 'neutral',
 }
 
 export const AI_PREVIEW_SAMPLE_LEAD: Lead = {
@@ -74,6 +78,10 @@ function isMessageGoal(value: string): value is AIMessageGoal {
   return AI_MESSAGE_GOALS.includes(value as AIMessageGoal)
 }
 
+function isTone(value: string): value is AITone {
+  return AI_TONES.includes(value as AITone)
+}
+
 export function normalizeAISettings(
   raw?: Partial<AISettings> | null,
   fallback: AISettings = DEFAULT_AI_SETTINGS,
@@ -90,11 +98,14 @@ export function normalizeAISettings(
     raw?.messageGoal && isMessageGoal(raw.messageGoal)
       ? raw.messageGoal
       : fallback.messageGoal
+  const tone =
+    raw?.tone && isTone(raw.tone) ? raw.tone : fallback.tone
 
   return {
     communicationStyle,
     messageLength,
     messageGoal,
+    tone,
     offerTopic:
       typeof raw?.offerTopic === 'string' ? raw.offerTopic : fallback.offerTopic,
     useAutoSignature:
@@ -143,24 +154,56 @@ export function getClosingLine(
   goal: AIMessageGoal,
   offerTopic: string,
   length: AIMessageLength,
+  tone: AITone = 'neutral',
 ): string {
   const topic = offerTopic.trim()
 
   switch (goal) {
     case 'followup':
+      if (tone === 'soft') {
+        return length === 'short'
+          ? 'Если удобно — буду рада вашему ответу.'
+          : 'Если тема ещё актуальна — с радостью продолжу диалог.'
+      }
+      if (tone === 'assertive') {
+        return 'Напишите, пожалуйста, когда сможете ответить — готова обсудить детали.'
+      }
       return length === 'short'
         ? 'Буду рада вашему ответу.'
         : 'Если актуально — с радостью продолжу диалог и отвечу на вопросы.'
     case 'sell':
+      if (tone === 'assertive') {
+        return topic
+          ? `Предлагаю обсудить ${topic} — покажу примеры и следующий шаг.`
+          : 'Предлагаю обсудить услуги и показать примеры работ.'
+      }
       return topic
         ? `Могу рассказать подробнее о ${topic} и показать примеры работ.`
         : 'Могу рассказать подробнее об услугах и показать примеры работ.'
     case 'contact_request':
+      if (tone === 'soft') {
+        return 'Если удобно — подскажите, когда можно коротко созвониться.'
+      }
+      if (tone === 'assertive') {
+        return 'Давайте созвонимся на 10–15 минут — когда вам удобно?'
+      }
       return 'Подскажите, когда удобно созвониться на 10–15 минут?'
     case 'reactivation':
-      return 'Буду рада вернуться к диалогу и предложить актуальные решения.'
+      return tone === 'assertive'
+        ? 'Готова вернуться к диалогу и предложить актуальные решения — напишите, если интересно.'
+        : 'Буду рада вернуться к диалогу и предложить актуальные решения.'
     case 'introduction':
     default:
+      if (tone === 'soft') {
+        return length === 'short'
+          ? 'Если интересно — с радостью подготовлю краткий аудит.'
+          : 'Если интересно — могу подготовить краткий аудит без обязательств.'
+      }
+      if (tone === 'assertive') {
+        return length === 'short'
+          ? 'Готова подготовить краткий аудит — напишите, если актуально.'
+          : 'Готова подготовить краткий аудит и показать точки роста — напишите, если актуально.'
+      }
       return length === 'short'
         ? 'Если интересно — напишите, подготовлю краткий аудит.'
         : 'Если интересно — подготовлю краткий аудит без обязательств.'
@@ -197,10 +240,17 @@ export function buildAISettingsPromptSection(settings: AISettings): string {
     ? 'В конце обязательно добавь автоподпись из правил.'
     : 'Не добавляй подпись в конце сообщения.'
 
+  const toneLines: Record<AITone, string> = {
+    soft: 'Тон: мягкий — без давления, деликатные формулировки.',
+    neutral: 'Тон: нейтральный — уверенно и спокойно.',
+    assertive: 'Тон: настойчивый — чёткий призыв к действию, без агрессии.',
+  }
+
   return [
     styleLines[settings.communicationStyle],
     lengthLines[settings.messageLength],
     goalLines[settings.messageGoal],
+    toneLines[settings.tone],
     topicLine,
     signatureLine,
   ].join('\n')

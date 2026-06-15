@@ -5,17 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SettingsOptionGroup } from '@/components/settings/SettingsOptionGroup'
 import {
   AI_COMMUNICATION_STYLES,
   AI_MESSAGE_GOALS,
   AI_MESSAGE_LENGTHS,
   AI_PREVIEW_SAMPLE_LEAD,
+  AI_TONES,
   DEFAULT_AI_SETTINGS,
   normalizeAISettings,
 } from '@/lib/aiMessageSettings'
+import { normalizeAIProfile } from '@/lib/aiProfile'
 import { buildSenderSignature } from '@/lib/senderProfile'
 import { ru } from '@/i18n/ru'
-import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 const STYLE_LABELS = {
@@ -39,59 +41,16 @@ const GOAL_LABELS = {
   reactivation: ru.settings.aiGoalReactivation,
 } as const
 
+const TONE_LABELS = {
+  soft: ru.settings.aiToneSoft,
+  neutral: ru.settings.aiToneNeutral,
+  assertive: ru.settings.aiToneAssertive,
+} as const
+
 interface AISettingsCardProps {
   settings: AppSettings
   profile: AppProfile
   onSave: (settings: AppSettings) => Promise<void>
-}
-
-function OptionGroup<T extends string>({
-  label,
-  value,
-  options,
-  labels,
-  onChange,
-  columns = 2,
-}: {
-  label: string
-  value: T
-  options: readonly T[]
-  labels: Record<T, string>
-  onChange: (value: T) => void
-  columns?: 2 | 3 | 4 | 5
-}) {
-  const gridClass =
-    columns === 5
-      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
-      : columns === 4
-        ? 'grid-cols-2 sm:grid-cols-4'
-        : columns === 3
-          ? 'grid-cols-3'
-          : 'grid-cols-2'
-
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className={cn('grid gap-2', gridClass)}>
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={value === option}
-            onClick={() => onChange(option)}
-            className={cn(
-              'rounded-lg border px-3 py-2 text-sm transition-colors',
-              value === option
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border text-muted-foreground hover:border-primary/40 hover:bg-accent hover:text-foreground',
-            )}
-          >
-            {labels[option]}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 export function AISettingsCard({ settings, profile, onSave }: AISettingsCardProps) {
@@ -105,9 +64,15 @@ export function AISettingsCard({ settings, profile, onSave }: AISettingsCardProp
     setAiSettings((prev) => ({ ...prev, [key]: value }))
   }
 
+  const aiProfile = useMemo(
+    () => normalizeAIProfile(settings.aiProfile),
+    [settings.aiProfile],
+  )
+
   const previewMessage = useMemo(
-    () => buildOutreachMessage(AI_PREVIEW_SAMPLE_LEAD, profile, aiSettings),
-    [profile, aiSettings],
+    () =>
+      buildOutreachMessage(AI_PREVIEW_SAMPLE_LEAD, profile, aiSettings, aiProfile),
+    [profile, aiSettings, aiProfile],
   )
 
   const signaturePreview = useMemo(() => buildSenderSignature(profile), [profile])
@@ -127,7 +92,7 @@ export function AISettingsCard({ settings, profile, onSave }: AISettingsCardProp
         <CardDescription>{ru.settings.aiSettingsDescription}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <OptionGroup
+        <SettingsOptionGroup
           label={ru.settings.aiCommunicationStyle}
           value={aiSettings.communicationStyle}
           options={AI_COMMUNICATION_STYLES}
@@ -136,7 +101,16 @@ export function AISettingsCard({ settings, profile, onSave }: AISettingsCardProp
           columns={4}
         />
 
-        <OptionGroup
+        <SettingsOptionGroup
+          label={ru.settings.aiTone}
+          value={aiSettings.tone}
+          options={AI_TONES}
+          labels={TONE_LABELS}
+          onChange={(value) => updateField('tone', value)}
+          columns={3}
+        />
+
+        <SettingsOptionGroup
           label={ru.settings.aiMessageLength}
           value={aiSettings.messageLength}
           options={AI_MESSAGE_LENGTHS}
@@ -145,7 +119,7 @@ export function AISettingsCard({ settings, profile, onSave }: AISettingsCardProp
           columns={3}
         />
 
-        <OptionGroup
+        <SettingsOptionGroup
           label={ru.settings.aiMessageGoal}
           value={aiSettings.messageGoal}
           options={AI_MESSAGE_GOALS}

@@ -96,6 +96,7 @@ export function updateLeadEntity(lead: Lead, input: UpdateLeadInput): Lead {
     tags: input.tags ?? lead.tags,
     opportunities: input.opportunities ?? lead.opportunities ?? [],
     generatedMessage: input.generatedMessage ?? lead.generatedMessage,
+    messageHistory: input.messageHistory ?? lead.messageHistory,
     aiRecommendations: input.aiRecommendations ?? lead.aiRecommendations,
     siteAudit: input.siteAudit ?? lead.siteAudit,
     updatedAt: now,

@@ -94,6 +94,7 @@ export interface Lead {
   opportunities: ImprovementOpportunity[]
   comments: LeadComment[]
   generatedMessage?: string
+  messageHistory?: LeadMessageVariant[]
   siteAudit?: SiteAuditResult
   sheetsRowIndex?: number
   createdAt: string
@@ -172,12 +173,27 @@ export type AIMessageGoal =
   | 'contact_request'
   | 'reactivation'
 
+export type AITone = 'soft' | 'neutral' | 'assertive'
+
 export interface AISettings {
   communicationStyle: AICommunicationStyle
   messageLength: AIMessageLength
   messageGoal: AIMessageGoal
   offerTopic: string
   useAutoSignature: boolean
+  tone: AITone
+}
+
+export interface AIProfile {
+  whoIAm: string
+  targetAudience: string
+  advantages: string
+}
+
+export interface LeadMessageVariant {
+  id: string
+  content: string
+  createdAt: string
 }
 
 export interface AppSettings {
@@ -186,6 +202,7 @@ export interface AppSettings {
   plan: PlanType
   integrations: AppIntegrations
   aiSettings: AISettings
+  aiProfile: AIProfile
 }
 
 export interface LeadFilters {
@@ -224,6 +241,7 @@ export interface CreateLeadInput {
 export interface UpdateLeadInput extends Partial<CreateLeadInput> {
   status?: LeadStatus
   generatedMessage?: string
+  messageHistory?: LeadMessageVariant[]
   siteAudit?: SiteAuditResult
   aiRecommendations?: string
 }

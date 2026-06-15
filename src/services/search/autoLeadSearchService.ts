@@ -1,4 +1,5 @@
 import type {
+  AIProfile,
   AISettings,
   AppProfile,
   AutoSearchDraftLead,
@@ -113,6 +114,7 @@ function buildDraftLead(
   index: number,
   senderProfile?: Partial<AppProfile>,
   aiSettings?: Partial<AISettings> | null,
+  aiProfile?: Partial<AIProfile> | null,
 ): AutoSearchDraftLead {
   const niche = normalizeNicheName(params.niche)
   const resolved = resolveLeadFieldsFromSourceUrl(url, source, niche)
@@ -158,7 +160,7 @@ function buildDraftLead(
     website: resolved.website,
     contacts,
     opportunities,
-    generatedMessage: buildOutreachMessage(leadForMessage, senderProfile, aiSettings),
+    generatedMessage: buildOutreachMessage(leadForMessage, senderProfile, aiSettings, aiProfile),
     notes: '',
   }
 }
@@ -167,6 +169,7 @@ export function runAutoLeadSearch(
   params: AutoSearchParams,
   senderProfile?: Partial<AppProfile>,
   aiSettings?: Partial<AISettings> | null,
+  aiProfile?: Partial<AIProfile> | null,
 ): AutoSearchDraftLead[] {
   const count = Math.min(Math.max(params.count, 1), 50)
   const links = parseLinksFromText(params.linksText ?? '')
@@ -181,13 +184,14 @@ export function runAutoLeadSearch(
         index,
         senderProfile,
         aiSettings,
+        aiProfile,
       ),
     )
   }
 
   return Array.from({ length: count }, (_, index) => {
     const url = buildMockUrl(params.source, params.niche, params.city, index)
-    return buildDraftLead(params, url, params.source, index, senderProfile, aiSettings)
+    return buildDraftLead(params, url, params.source, index, senderProfile, aiSettings, aiProfile)
   })
 }
 
@@ -212,6 +216,7 @@ export function regenerateDraftMessage(
   draft: AutoSearchDraftLead,
   senderProfile?: Partial<AppProfile>,
   aiSettings?: Partial<AISettings> | null,
+  aiProfile?: Partial<AIProfile> | null,
 ): string {
   const lead: Lead = {
     id: draft.id,
@@ -232,5 +237,5 @@ export function regenerateDraftMessage(
     updatedAt: new Date().toISOString(),
     activityLog: [],
   }
-  return buildOutreachMessage(lead, senderProfile, aiSettings)
+  return buildOutreachMessage(lead, senderProfile, aiSettings, aiProfile)
 }

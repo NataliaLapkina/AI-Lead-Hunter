@@ -4,6 +4,7 @@ import { resolveLeadSource } from './leadSources'
 import { normalizeNicheName } from './nicheDisplay'
 import { createDefaultAppProfile, normalizeAppProfile } from './senderProfile'
 import { normalizeAISettings } from './aiMessageSettings'
+import { normalizeAIProfile } from './aiProfile'
 import {
   buildInitialNichePresets,
   createDefaultNichePresets,
@@ -278,6 +279,17 @@ function migrateSettingsAISettingsV17(): void {
   })
 }
 
+function migrateSettingsAIProfileV18(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    aiSettings: normalizeAISettings(settings.aiSettings),
+    aiProfile: normalizeAIProfile(settings.aiProfile),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -337,6 +349,10 @@ export function runMigrations(): void {
 
   if (current < 17) {
     migrateSettingsAISettingsV17()
+  }
+
+  if (current < 18) {
+    migrateSettingsAIProfileV18()
   }
 
   if (current < SCHEMA_VERSION) {
