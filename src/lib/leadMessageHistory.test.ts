@@ -67,6 +67,16 @@ describe('buildRegeneratedMessageUpdate', () => {
 
     expect(update.messageHistory).toEqual([])
   })
+
+  it('archives explicit content when generatedMessage is missing', () => {
+    const lead = createLead({ generatedMessage: undefined })
+    const update = buildRegeneratedMessageUpdate(lead, 'Новое сообщение', {
+      archiveCurrent: true,
+      archiveContent: 'Шаблонное сообщение',
+    })
+
+    expect(update.messageHistory?.[0]?.content).toBe('Шаблонное сообщение')
+  })
 })
 
 describe('buildRestoreMessageUpdate', () => {

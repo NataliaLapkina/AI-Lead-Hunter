@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { Lead } from '@/domain/lead'
 import { Button } from '@/components/ui/button'
 import { ru } from '@/i18n/ru'
@@ -10,7 +11,8 @@ interface LeadMessagePanelProps {
   message: string
   isGenerating: boolean
   restoringVariantId: string | null
-  canUseAI: boolean
+  hasApiKey: boolean
+  hasCurrentMessage: boolean
   onCopy: () => void
   onGenerate: () => void
   onRegenerate: () => void
@@ -22,12 +24,16 @@ export function LeadMessagePanel({
   message,
   isGenerating,
   restoringVariantId,
-  canUseAI,
+  hasApiKey,
+  hasCurrentMessage,
   onCopy,
   onGenerate,
   onRegenerate,
   onRestore,
 }: LeadMessagePanelProps) {
+  const canGenerate = hasApiKey && !isGenerating
+  const canRegenerate = hasApiKey && hasCurrentMessage && !isGenerating
+
   return (
     <div id="lead-ai-message" className="space-y-4 scroll-mt-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -40,9 +46,8 @@ export function LeadMessagePanel({
             variant="outline"
             size="sm"
             onClick={onGenerate}
-            disabled={isGenerating || !canUseAI}
+            disabled={!canGenerate}
             className="gap-2"
-            title={!canUseAI ? ru.settings.openaiRequired : undefined}
           >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -53,6 +58,21 @@ export function LeadMessagePanel({
           </Button>
         </div>
       </div>
+
+      {!hasApiKey && (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+          {ru.leads.messageOpenAIRequiredHint}{' '}
+          <Link to="/settings" className="font-medium underline underline-offset-2">
+            {ru.nav.settings}
+          </Link>
+        </p>
+      )}
+
+      {hasApiKey && !hasCurrentMessage && (
+        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          {ru.leads.messageRegenerateUnavailable}
+        </p>
+      )}
 
       {isGenerating && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -79,9 +99,8 @@ export function LeadMessagePanel({
           variant="outline"
           size="sm"
           onClick={onRegenerate}
-          disabled={isGenerating || !canUseAI}
+          disabled={!canRegenerate}
           className="gap-2"
-          title={!canUseAI ? ru.settings.openaiRequired : undefined}
         >
           {isGenerating ? (
             <Loader2 className="h-4 w-4 animate-spin" />

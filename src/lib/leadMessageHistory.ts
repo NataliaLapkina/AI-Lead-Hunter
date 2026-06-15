@@ -37,14 +37,17 @@ export function pushMessageToHistory(
 export function buildRegeneratedMessageUpdate(
   lead: Lead,
   newMessage: string,
-  options?: { archiveCurrent?: boolean },
+  options?: { archiveCurrent?: boolean; archiveContent?: string },
 ): Pick<UpdateLeadInput, 'generatedMessage' | 'messageHistory'> {
   const archiveCurrent = options?.archiveCurrent ?? true
   const trimmed = newMessage.trim()
   let messageHistory = normalizeMessageHistory(lead.messageHistory)
 
-  if (archiveCurrent && lead.generatedMessage?.trim() && lead.generatedMessage.trim() !== trimmed) {
-    messageHistory = pushMessageToHistory(messageHistory, lead.generatedMessage)
+  if (archiveCurrent) {
+    const contentToArchive = (options?.archiveContent ?? lead.generatedMessage)?.trim()
+    if (contentToArchive && contentToArchive !== trimmed) {
+      messageHistory = pushMessageToHistory(messageHistory, contentToArchive)
+    }
   }
 
   return {

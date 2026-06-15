@@ -93,7 +93,7 @@ export function IntegrationsSettings() {
       <div className="space-y-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <p className="font-medium">{ru.settings.openai}</p>
-          {hasOpenAIKey(openaiKey) && (
+          {hasOpenAIKey(settings.integrations.openaiApiKey ?? openaiKey) && (
             <Badge variant="success" className="text-xs">
               {ru.settings.connected}
             </Badge>

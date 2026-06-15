@@ -246,6 +246,8 @@ export const ru = {
     messageHistoryCount: 'Сохранено: {count}',
     messageHistoryEmpty: 'Пока нет сохранённых вариантов. Нажмите «Сгенерировать заново», чтобы сохранить текущую версию в историю.',
     messageHistoryEmptyShort: 'Нет вариантов',
+    messageOpenAIRequiredHint: 'Чтобы генерировать сообщения, укажите OpenAI API key в разделе',
+    messageRegenerateUnavailable: 'Сначала должно быть сообщение, которое можно сохранить в историю.',
     messageVariantLabel: 'Вариант {n}',
     restoreMessageVariant: 'Восстановить этот вариант',
     openWhatsApp: 'Открыть WhatsApp',

@@ -49,7 +49,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { generateAIMessage } from '@/services/ai/AIMessageGenerator'
-import { hasOpenAIKey } from '@/services/ai/openaiClient'
+import { hasOpenAIKey, normalizeOpenAIApiKey } from '@/services/ai/openaiClient'
 import {
   buildRegeneratedMessageUpdate,
   buildRestoreMessageUpdate,
@@ -84,6 +84,7 @@ export function LeadDetailView({
   focusSeq = 0,
 }: LeadDetailViewProps) {
   const { settings, fetchSettings } = useSettingsStore()
+  const apiKey = useSettingsStore((state) => state.settings?.integrations.openaiApiKey)
   const [isGenerating, setIsGenerating] = useState(false)
   const [restoringVariantId, setRestoringVariantId] = useState<string | null>(null)
   const [isAuditing, setIsAuditing] = useState(false)
@@ -93,7 +94,8 @@ export function LeadDetailView({
     void fetchSettings()
   }, [fetchSettings])
 
-  const apiKey = settings?.integrations.openaiApiKey
+  const normalizedApiKey = normalizeOpenAIApiKey(apiKey)
+  const hasApiKey = hasOpenAIKey(normalizedApiKey)
 
   const fallbackMessage = buildOutreachMessage(
     lead,
@@ -148,14 +150,14 @@ export function LeadDetailView({
   }
 
   const generateMessage = async (regenerate: boolean) => {
-    if (!hasOpenAIKey(apiKey)) {
+    if (!hasApiKey || !normalizedApiKey) {
       toast.error(ru.settings.openaiRequired)
       return
     }
 
     setIsGenerating(true)
     try {
-      const generated = await generateAIMessage(apiKey!, {
+      const generated = await generateAIMessage(normalizedApiKey, {
         lead,
         senderProfile: settings?.profile,
         aiSettings: settings?.aiSettings,
@@ -163,6 +165,7 @@ export function LeadDetailView({
       })
       const update = buildRegeneratedMessageUpdate(lead, generated, {
         archiveCurrent: regenerate,
+        archiveContent: regenerate ? lead.generatedMessage?.trim() || message.trim() : undefined,
       })
       await onUpdateLead(lead.id, update)
       toast.success(ru.leads.messageGenerated)
@@ -206,8 +209,8 @@ export function LeadDetailView({
       let audit = await auditWebsite(lead.website)
       let aiRecommendations = lead.aiRecommendations
 
-      if (hasOpenAIKey(apiKey)) {
-        aiRecommendations = await enhanceAuditWithAI(apiKey!, audit, lead.name)
+      if (hasApiKey && normalizedApiKey) {
+        aiRecommendations = await enhanceAuditWithAI(normalizedApiKey, audit, lead.name)
       }
 
       const autoOpportunities = findingsToOpportunities(audit.findings)
@@ -443,7 +446,8 @@ export function LeadDetailView({
             message={message}
             isGenerating={isGenerating}
             restoringVariantId={restoringVariantId}
-            canUseAI={hasOpenAIKey(apiKey)}
+            hasApiKey={hasApiKey}
+            hasCurrentMessage={Boolean(message.trim())}
             onCopy={() => void handleCopyMessage()}
             onGenerate={() => void handleGenerateAI()}
             onRegenerate={() => void handleRegenerateAI()}

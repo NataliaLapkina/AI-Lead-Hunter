@@ -38,6 +38,19 @@ export async function callOpenAI(
   return content
 }
 
-export function hasOpenAIKey(apiKey?: string): boolean {
-  return Boolean(apiKey?.trim().startsWith('sk-'))
+export function normalizeOpenAIApiKey(apiKey?: string | null): string | undefined {
+  if (!apiKey) return undefined
+
+  const trimmed = apiKey.trim().replace(/^["']|["']$/g, '')
+  return trimmed || undefined
+}
+
+export function hasOpenAIKey(apiKey?: string | null): boolean {
+  const normalized = normalizeOpenAIApiKey(apiKey)
+  if (!normalized) return false
+
+  if (/^sk-[a-zA-Z0-9_-]{8,}$/.test(normalized)) return true
+
+  // Fallback for non-standard but saved secrets in local settings.
+  return normalized.length >= 20
 }
