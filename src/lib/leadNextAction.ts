@@ -156,9 +156,11 @@ export function computeActionRequiredCounts(leads: Lead[]): ActionRequiredCounts
 }
 
 export const NEXT_ACTION_COLOR_CLASSES: Record<NextActionColor, string> = {
-  red: 'text-red-700 bg-red-50 border-red-200',
-  yellow: 'text-amber-700 bg-amber-50 border-amber-200',
-  green: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-  blue: 'text-blue-700 bg-blue-50 border-blue-200',
+  red: 'text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-800',
+  yellow:
+    'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-800',
+  green:
+    'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800',
+  blue: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/40 dark:border-blue-800',
   muted: 'text-muted-foreground bg-muted/50 border-border',
 }

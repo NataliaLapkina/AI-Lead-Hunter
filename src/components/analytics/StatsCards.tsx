@@ -37,7 +37,7 @@ const INTERACTIVE_CARD_CLASS =
   'cursor-pointer transition-all duration-150 hover:scale-[1.02] hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
 
 const ATTENTION_CARD_CLASS =
-  'border-red-300 bg-red-50'
+  'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
 
 const ATTENTION_INTERACTIVE_CLASS =
   'cursor-pointer transition-all duration-150 hover:scale-[1.02] hover:border-red-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2'
@@ -96,7 +96,7 @@ function StatCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className={cn('text-2xl font-bold', isAttention && 'text-red-700')}>
+        <p className={cn('text-2xl font-bold', isAttention && 'text-red-700 dark:text-red-300')}>
           {stat.value}
         </p>
         {isClickable && (

@@ -298,6 +298,11 @@ export const ru = {
   settings: {
     title: 'Настройки',
     subtitle: 'Профиль и параметры приложения',
+    theme: 'Тема оформления',
+    themeDescription: 'Светлая, тёмная или как в системе',
+    themeLight: 'Светлая',
+    themeDark: 'Тёмная',
+    themeSystem: 'Системная',
     profile: 'Профиль',
     myContacts: 'Мои контакты',
     profileDescription: 'Ваши данные сохраняются локально и используются в AI-сообщениях и подписи',

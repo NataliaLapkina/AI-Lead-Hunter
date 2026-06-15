@@ -7,6 +7,7 @@ import {
   Settings,
   Target,
 } from 'lucide-react'
+import { ThemeModeSelect } from '@/components/theme/ThemeModeSelect'
 import { cn } from '@/lib/utils'
 import { ru } from '@/i18n/ru'
 
@@ -50,6 +51,9 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="border-t p-2">
+        <ThemeModeSelect variant="compact" />
+      </div>
     </aside>
   )
 }

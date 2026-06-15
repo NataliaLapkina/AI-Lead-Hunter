@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings'
+import { ThemeModeSelect } from '@/components/theme/ThemeModeSelect'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,6 +142,16 @@ export function SettingsPage() {
     <>
       <AppShell title={ru.settings.title} subtitle={ru.settings.subtitle}>
         <div className="mx-auto max-w-2xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{ru.settings.theme}</CardTitle>
+              <CardDescription>{ru.settings.themeDescription}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemeModeSelect />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{ru.settings.myContacts}</CardTitle>

@@ -46,7 +46,7 @@ export function LeadFiltersBar({
           }
           className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
             filters.attention === 'overdue'
-              ? 'border-red-300 bg-red-50 text-red-700'
+              ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300'
               : 'border-border text-muted-foreground hover:border-red-200 hover:text-red-700'
           }`}
         >

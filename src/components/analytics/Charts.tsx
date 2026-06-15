@@ -76,9 +76,14 @@ export function StatusFunnel({ analytics }: StatusFunnelProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" allowDecimals={false} />
-            <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-border" />
+            <XAxis type="number" allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={80}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+            />
             <Tooltip content={<OpenLeadsTooltip />} />
             <Bar
               dataKey="value"
