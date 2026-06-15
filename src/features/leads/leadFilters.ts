@@ -36,6 +36,11 @@ export function parseLeadFiltersFromSearchParams(
     result.attention = 'overdue'
   }
 
+  const niche = params.get('niche')?.trim()
+  if (niche) {
+    result.niche = niche
+  }
+
   return result
 }
 
@@ -52,6 +57,10 @@ export function buildLeadSearchParams(filters: LeadFilters): URLSearchParams {
 
   if (filters.attention === 'overdue') {
     params.set('attention', 'overdue')
+  }
+
+  if (filters.niche) {
+    params.set('niche', filters.niche)
   }
 
   return params

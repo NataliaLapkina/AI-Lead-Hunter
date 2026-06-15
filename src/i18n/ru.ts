@@ -273,6 +273,7 @@ export const ru = {
   analytics: {
     title: 'Аналитика',
     subtitle: 'Статистика и воронка продаж',
+    openLeadsTooltip: 'Открыть лиды',
     funnel: 'Воронка статусов',
     byNiche: 'По нишам',
     bySource: 'По источникам',

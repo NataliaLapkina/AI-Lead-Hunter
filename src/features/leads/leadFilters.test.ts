@@ -27,6 +27,14 @@ describe('parseLeadFiltersFromSearchParams', () => {
     expect(parseLeadFiltersFromSearchParams(new URLSearchParams('status=unknown'))).toEqual({})
   })
 
+  it('parses niche from URL', () => {
+    expect(
+      parseLeadFiltersFromSearchParams(
+        new URLSearchParams(`niche=${encodeURIComponent('Нутрициолог')}`),
+      ),
+    ).toEqual({ niche: 'Нутрициолог' })
+  })
+
   it('parses attention=overdue', () => {
     expect(parseLeadFiltersFromSearchParams(new URLSearchParams('attention=overdue'))).toEqual({
       attention: 'overdue',
@@ -62,5 +70,19 @@ describe('buildLeadSearchParams', () => {
     })
 
     expect(params.toString()).toBe('status=new&attention=overdue')
+  })
+
+  it('builds niche param', () => {
+    const params = buildLeadSearchParams({
+      search: '',
+      status: 'all',
+      niche: 'Мебельщик',
+      source: 'all',
+      potential: 'all',
+      tags: [],
+      attention: 'all',
+    })
+
+    expect(params.get('niche')).toBe('Мебельщик')
   })
 })

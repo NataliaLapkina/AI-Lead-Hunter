@@ -1,6 +1,13 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { AnalyticsSummary } from '@/domain/lead'
+import type { LeadStatus } from '@/domain/lead'
 import { LEAD_STATUSES } from '@/lib/constants'
 import { getStatusLabel, ru } from '@/i18n/ru'
+import {
+  buildLeadsPathForNiche,
+  buildLeadsPathForStatus,
+} from '@/features/analytics/analyticsNavigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   BarChart,
@@ -16,12 +23,39 @@ import {
 } from 'recharts'
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#6b7280', '#94a3b8']
+const BAR_ACTIVE_FILL = '#2563eb'
+
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: Array<{ name?: string; value?: number }>
+}
+
+function OpenLeadsTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+
+  const item = payload[0]
+
+  return (
+    <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-md">
+      <p className="font-medium">
+        {item.name}: {item.value}
+      </p>
+      <p className="text-xs text-muted-foreground">{ru.analytics.openLeadsTooltip}</p>
+    </div>
+  )
+}
+
+interface FunnelBarPayload {
+  status: LeadStatus
+}
 
 interface StatusFunnelProps {
   analytics: AnalyticsSummary
 }
 
 export function StatusFunnel({ analytics }: StatusFunnelProps) {
+  const navigate = useNavigate()
+
   const data = LEAD_STATUSES.map((status) => ({
     name: getStatusLabel(status),
     value: analytics.byStatus[status],
@@ -29,6 +63,10 @@ export function StatusFunnel({ analytics }: StatusFunnelProps) {
   })).filter((d) => d.value > 0)
 
   if (data.length === 0) return null
+
+  const handleBarClick = (payload: FunnelBarPayload) => {
+    navigate(buildLeadsPathForStatus(payload.status))
+  }
 
   return (
     <Card>
@@ -41,8 +79,18 @@ export function StatusFunnel({ analytics }: StatusFunnelProps) {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" allowDecimals={false} />
             <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+            <Tooltip content={<OpenLeadsTooltip />} />
+            <Bar
+              dataKey="value"
+              fill="#3b82f6"
+              radius={[0, 4, 4, 0]}
+              cursor="pointer"
+              activeBar={{ fill: BAR_ACTIVE_FILL }}
+              onClick={(entry) => {
+                const payload = entry?.payload as FunnelBarPayload | undefined
+                if (payload?.status) handleBarClick(payload)
+              }}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -55,12 +103,20 @@ interface NicheDistributionProps {
 }
 
 export function NicheDistribution({ analytics }: NicheDistributionProps) {
+  const navigate = useNavigate()
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
   const data = Object.entries(analytics.byNiche)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
 
   if (data.length === 0) return null
+
+  const handleSliceClick = (index: number) => {
+    const niche = data[index]?.name
+    if (niche) navigate(buildLeadsPathForNiche(niche))
+  }
 
   return (
     <Card>
@@ -81,11 +137,21 @@ export function NicheDistribution({ analytics }: NicheDistributionProps) {
               label={({ name, value }) => `${name}: ${value}`}
               labelLine={false}
             >
-              {data.map((_, index) => (
-                <Cell key={index} fill={COLORS[index % COLORS.length]} />
+              {data.map((entry, index) => (
+                <Cell
+                  key={entry.name}
+                  fill={COLORS[index % COLORS.length]}
+                  fillOpacity={activeIndex === null || activeIndex === index ? 1 : 0.45}
+                  stroke={activeIndex === index ? '#1d4ed8' : undefined}
+                  strokeWidth={activeIndex === index ? 2 : 0}
+                  cursor="pointer"
+                  onClick={() => handleSliceClick(index)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip content={<OpenLeadsTooltip />} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
