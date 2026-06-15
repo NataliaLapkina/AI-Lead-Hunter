@@ -9,7 +9,10 @@ import { LeadForm } from '@/components/leads/LeadForm'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Button } from '@/components/ui/button'
 import { useLeads, useLead } from '@/features/leads/hooks/useLeads'
-import { mergeLeadFiltersFromSearchParams } from '@/features/leads/leadFilters'
+import {
+  buildLeadSearchParams,
+  mergeLeadFiltersFromSearchParams,
+} from '@/features/leads/leadFilters'
 import { useUIStore } from '@/stores'
 import { getUniqueNiches, getUniqueTags } from '@/features/analytics/computeAnalytics'
 import { exportLeadsToCsv, getCsvFilename } from '@/features/export/csvExporter'
@@ -37,11 +40,19 @@ export function LeadsPage() {
     addComment,
   } = useLeads()
 
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => {
     setFilters(mergeLeadFiltersFromSearchParams(searchParams))
   }, [searchParams, setFilters])
+
+  const handleFiltersChange: typeof setFilters = (nextFilters) => {
+    setFilters((current) => {
+      const updated = typeof nextFilters === 'function' ? nextFilters(current) : nextFilters
+      setSearchParams(buildLeadSearchParams(updated), { replace: true })
+      return updated
+    })
+  }
 
   const {
     selectedLeadId,
@@ -136,7 +147,7 @@ export function LeadsPage() {
         <div className="space-y-6">
           <LeadFiltersBar
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             sort={sort}
             onSortChange={setSort}
             niches={niches}
@@ -151,25 +162,29 @@ export function LeadsPage() {
               actionLabel={ru.leads.addLead}
               onAction={() => openLeadForm()}
             />
-          ) : filteredLeads.length === 0 ? (
-            <EmptyState
-              title={ru.common.noResults}
-              description="Попробуйте изменить параметры фильтрации"
-            />
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Показано {filteredLeads.length} из {leads.length}
+                {filters.attention === 'overdue'
+                  ? t('leads.overdueShown', { count: filteredLeads.length })
+                  : `Показано ${filteredLeads.length} из ${leads.length}`}
               </p>
-              <LeadTable
-                leads={filteredLeads}
-                onRowClick={openLeadSheet}
-                onNextActionClick={handleNextAction}
-                onStatusChange={async (id, status) => {
-                  await updateStatus(id, status)
-                  toast.success(ru.toast.statusChanged)
-                }}
-              />
+              {filteredLeads.length === 0 ? (
+                <EmptyState
+                  title={ru.common.noResults}
+                  description="Попробуйте изменить параметры фильтрации"
+                />
+              ) : (
+                <LeadTable
+                  leads={filteredLeads}
+                  onRowClick={openLeadSheet}
+                  onNextActionClick={handleNextAction}
+                  onStatusChange={async (id, status) => {
+                    await updateStatus(id, status)
+                    toast.success(ru.toast.statusChanged)
+                  }}
+                />
+              )}
             </>
           )}
         </div>

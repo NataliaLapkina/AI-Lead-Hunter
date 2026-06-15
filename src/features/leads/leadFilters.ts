@@ -8,6 +8,7 @@ export const DEFAULT_LEAD_FILTERS: LeadFilters = {
   source: 'all',
   potential: 'all',
   tags: [],
+  attention: 'all',
 }
 
 export const IN_PROGRESS_STATUSES: LeadStatus[] = ['contacted', 'replied', 'meeting']
@@ -31,7 +32,29 @@ export function parseLeadFiltersFromSearchParams(
     result.potential = potential as LeadPotentialFilter
   }
 
+  if (params.get('attention') === 'overdue') {
+    result.attention = 'overdue'
+  }
+
   return result
+}
+
+export function buildLeadSearchParams(filters: LeadFilters): URLSearchParams {
+  const params = new URLSearchParams()
+
+  if (filters.status !== 'all') {
+    params.set('status', filters.status)
+  }
+
+  if (filters.potential !== 'all') {
+    params.set('potential', filters.potential)
+  }
+
+  if (filters.attention === 'overdue') {
+    params.set('attention', 'overdue')
+  }
+
+  return params
 }
 
 export function mergeLeadFiltersFromSearchParams(

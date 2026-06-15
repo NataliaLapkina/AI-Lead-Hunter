@@ -31,7 +31,25 @@ export function countLeadsRequiringAttention(
   leads: Lead[],
   referenceDate?: Date,
 ): number {
+  return filterOverdueLeads(leads, referenceDate).length
+}
+
+export function filterOverdueLeads(
+  leads: Lead[],
+  referenceDate?: Date,
+): Lead[] {
   return leads.filter(
     (lead) => computeLeadNextAction(lead, referenceDate).isOverdue,
-  ).length
+  )
+}
+
+export function sortLeadsByOverdueDays(
+  leads: Lead[],
+  referenceDate?: Date,
+): Lead[] {
+  return [...leads].sort(
+    (a, b) =>
+      computeLeadNextAction(b, referenceDate).overdueDays -
+      computeLeadNextAction(a, referenceDate).overdueDays,
+  )
 }

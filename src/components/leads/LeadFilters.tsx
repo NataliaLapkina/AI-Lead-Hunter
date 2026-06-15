@@ -35,6 +35,24 @@ export function LeadFiltersBar({
         onChange={(search) => onFiltersChange({ ...filters, search })}
         placeholder={ru.leads.searchPlaceholder}
       />
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() =>
+            onFiltersChange({
+              ...filters,
+              attention: filters.attention === 'overdue' ? 'all' : 'overdue',
+            })
+          }
+          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            filters.attention === 'overdue'
+              ? 'border-red-300 bg-red-50 text-red-700'
+              : 'border-border text-muted-foreground hover:border-red-200 hover:text-red-700'
+          }`}
+        >
+          {ru.leads.filterRequiresAttention}
+        </button>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-2">
           <Label>{ru.leads.filterByStatus}</Label>

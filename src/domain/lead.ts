@@ -122,6 +122,8 @@ export type LeadPotentialLevel = 'low' | 'medium' | 'high'
 
 export type LeadPotentialFilter = 'all' | LeadPotentialLevel
 
+export type LeadAttentionFilter = 'all' | 'overdue'
+
 export type LeadStatusFilter = LeadStatus | 'all' | 'in_progress' | 'client'
 
 export interface AnalyticsSummary {
@@ -172,6 +174,7 @@ export interface LeadFilters {
   source: LeadSource | 'all'
   potential: LeadPotentialFilter
   tags: string[]
+  attention: LeadAttentionFilter
 }
 
 export type LeadSortField = 'name' | 'createdAt' | 'updatedAt' | 'status' | 'niche' | 'potential'

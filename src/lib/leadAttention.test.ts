@@ -3,6 +3,8 @@ import type { Lead } from '@/domain/lead'
 import {
   computeLeadsRequiringAttention,
   countLeadsRequiringAttention,
+  filterOverdueLeads,
+  sortLeadsByOverdueDays,
 } from './leadAttention'
 
 const referenceDate = new Date('2026-06-01T15:00:00.000Z')
@@ -114,5 +116,43 @@ describe('countLeadsRequiringAttention', () => {
     )
 
     expect(count).toBe(1)
+  })
+})
+
+describe('filterOverdueLeads', () => {
+  it('returns only overdue leads', () => {
+    const overdue = filterOverdueLeads(
+      [
+        createLead('1', 'new'),
+        createLead('2', 'new', {
+          createdAt: '2026-05-20T08:00:00.000Z',
+          updatedAt: '2026-05-20T08:00:00.000Z',
+        }),
+      ],
+      referenceDate,
+    )
+
+    expect(overdue).toHaveLength(1)
+    expect(overdue[0].id).toBe('2')
+  })
+})
+
+describe('sortLeadsByOverdueDays', () => {
+  it('sorts overdue leads by overdueDays descending', () => {
+    const sorted = sortLeadsByOverdueDays(
+      [
+        createLead('1', 'new', {
+          createdAt: '2026-05-28T08:00:00.000Z',
+          updatedAt: '2026-05-28T08:00:00.000Z',
+        }),
+        createLead('2', 'new', {
+          createdAt: '2026-05-20T08:00:00.000Z',
+          updatedAt: '2026-05-20T08:00:00.000Z',
+        }),
+      ],
+      referenceDate,
+    )
+
+    expect(sorted.map((lead) => lead.id)).toEqual(['2', '1'])
   })
 })

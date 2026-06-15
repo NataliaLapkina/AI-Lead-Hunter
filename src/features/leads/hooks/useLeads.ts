@@ -10,6 +10,10 @@ import type {
 import { DEFAULT_LEAD_FILTERS } from '@/features/leads/leadFilters'
 import { repositories } from '@/repositories'
 import { useLeadStore } from '@/stores'
+import {
+  filterOverdueLeads,
+  sortLeadsByOverdueDays,
+} from '@/lib/leadAttention'
 
 const defaultFilters: LeadFilters = DEFAULT_LEAD_FILTERS
 
@@ -29,7 +33,15 @@ export function useLeads() {
   }, [fetchLeads])
 
   useEffect(() => {
-    repositories.leads.findFiltered(filters, sort).then(setFilteredLeads)
+    repositories.leads.findFiltered(filters, sort).then((results) => {
+      if (filters.attention === 'overdue') {
+        const overdueLeads = sortLeadsByOverdueDays(filterOverdueLeads(results))
+        setFilteredLeads(overdueLeads)
+        return
+      }
+
+      setFilteredLeads(results)
+    })
   }, [leads, filters, sort])
 
   const createLead = useCallback(
