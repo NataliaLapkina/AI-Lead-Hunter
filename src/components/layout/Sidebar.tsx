@@ -8,6 +8,10 @@ import {
   Target,
 } from 'lucide-react'
 import { ThemeModeSelect } from '@/components/theme/ThemeModeSelect'
+import { useTheme } from '@/features/theme/ThemeProvider'
+import { useSettingsStore } from '@/stores'
+import { THEME_MODE_EMOJI } from '@/lib/theme'
+import { getSenderDisplayName, DEFAULT_SENDER_PROFILE } from '@/lib/senderProfile'
 import { cn } from '@/lib/utils'
 import { ru } from '@/i18n/ru'
 
@@ -18,6 +22,31 @@ const navItems = [
   { to: '/analytics', icon: BarChart3, label: ru.nav.analytics },
   { to: '/settings', icon: Settings, label: ru.nav.settings },
 ]
+
+function SidebarUserRow() {
+  const { mode } = useTheme()
+  const profile = useSettingsStore((s) => s.settings?.profile)
+  const displayName = getSenderDisplayName(profile ?? DEFAULT_SENDER_PROFILE)
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2">
+      <span
+        className="text-sm leading-none"
+        aria-label={ru.settings.theme}
+        title={
+          mode === 'light'
+            ? ru.settings.themeLight
+            : mode === 'dark'
+              ? ru.settings.themeDark
+              : ru.settings.themeSystem
+        }
+      >
+        {THEME_MODE_EMOJI[mode]}
+      </span>
+      <p className="truncate text-sm font-medium">{displayName}</p>
+    </div>
+  )
+}
 
 export function Sidebar() {
   return (
@@ -52,6 +81,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="border-t p-2">
+        <SidebarUserRow />
         <ThemeModeSelect variant="compact" />
       </div>
     </aside>

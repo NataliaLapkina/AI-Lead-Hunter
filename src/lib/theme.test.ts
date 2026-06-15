@@ -3,6 +3,7 @@ import {
   applyTheme,
   readStoredThemeMode,
   resolveTheme,
+  THEME_MODE_EMOJI,
   writeStoredThemeMode,
 } from './theme'
 
@@ -123,5 +124,13 @@ describe('applyTheme', () => {
     applyTheme('light')
     expect(document.documentElement.classList.contains('dark')).toBe(false)
     expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+})
+
+describe('THEME_MODE_EMOJI', () => {
+  it('maps each mode to an emoji', () => {
+    expect(THEME_MODE_EMOJI.light).toBe('☀️')
+    expect(THEME_MODE_EMOJI.dark).toBe('🌙')
+    expect(THEME_MODE_EMOJI.system).toBe('💻')
   })
 })

@@ -53,8 +53,19 @@
   * {
     @apply border-border;
   }
+  html {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
   }
 }
 

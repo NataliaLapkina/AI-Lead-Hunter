@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import {
   applyTheme,
   initTheme,
@@ -8,6 +9,18 @@ import {
   type ThemeMode,
   writeStoredThemeMode,
 } from '@/lib/theme'
+import { ru } from '@/i18n/ru'
+
+function getThemeChangeToastMessage(mode: ThemeMode): string {
+  switch (mode) {
+    case 'light':
+      return ru.settings.themeLightEnabled
+    case 'dark':
+      return ru.settings.themeDarkEnabled
+    case 'system':
+      return ru.settings.themeSystemEnabled
+  }
+}
 
 interface ThemeContextValue {
   mode: ThemeMode
@@ -22,10 +35,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(mode))
 
   const setMode = useCallback((nextMode: ThemeMode) => {
+    if (nextMode === mode) return
+
     writeStoredThemeMode(nextMode)
     setModeState(nextMode)
     setResolvedTheme(applyTheme(nextMode))
-  }, [])
+    toast.success(getThemeChangeToastMessage(nextMode))
+  }, [mode])
 
   useEffect(() => {
     setResolvedTheme(applyTheme(mode))
@@ -36,7 +52,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
-      setResolvedTheme(applyTheme('system'))
+      const resolved = applyTheme('system')
+      setResolvedTheme(resolved)
     }
 
     media.addEventListener('change', handleChange)

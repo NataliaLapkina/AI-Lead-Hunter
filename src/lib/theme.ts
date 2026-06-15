@@ -4,6 +4,12 @@ export type ResolvedTheme = 'light' | 'dark'
 
 export const THEME_STORAGE_KEY = 'alh_theme'
 
+export const THEME_MODE_EMOJI: Record<ThemeMode, string> = {
+  light: '☀️',
+  dark: '🌙',
+  system: '💻',
+}
+
 const VALID_MODES: ThemeMode[] = ['light', 'dark', 'system']
 
 export function isThemeMode(value: string | null): value is ThemeMode {
