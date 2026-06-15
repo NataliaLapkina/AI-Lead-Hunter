@@ -13,6 +13,7 @@ import { getStorageItem, setStorageItem } from '@/lib/storage'
 import {
   createLeadEntity,
   updateLeadEntity,
+  normalizeLeadEntity,
   normalizeWebsite,
   normalizeEmail,
 } from '@/domain/leadFactory'
@@ -22,7 +23,7 @@ import { computeLeadScore, matchesPotentialFilter } from '@/lib/leadScore'
 
 export class LocalStorageLeadRepository implements ILeadRepository {
   private getLeads(): Lead[] {
-    return getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, [])
+    return getStorageItem<Lead[]>(STORAGE_KEYS.LEADS, []).map(normalizeLeadEntity)
   }
 
   private saveLeads(leads: Lead[]): void {

@@ -20,7 +20,7 @@ import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge'
 import { LeadActivityFeed } from '@/components/leads/LeadActivityFeed'
 import { LeadComments } from '@/components/leads/LeadComments'
 import { LeadOutreachActions } from '@/components/leads/LeadOutreachActions'
-import { LeadMessageVariants } from '@/components/leads/LeadMessageVariants'
+import { LeadMessagePanel } from '@/components/leads/LeadMessagePanel'
 import { LeadPotentialPanel } from '@/components/leads/LeadPotentialPanel'
 import { LeadNextActionPanel } from '@/components/leads/LeadNextActionPanel'
 import { LeadSourceLink } from '@/components/leads/LeadSourceLink'
@@ -43,7 +43,6 @@ import {
   Mail,
   Phone,
   MessageCircle,
-  Sparkles,
   ScanSearch,
   Maximize2,
   Loader2,
@@ -119,7 +118,7 @@ export function LeadDetailView({
 
     const tabByFocus: Record<LeadDetailFocus, string> = {
       overview: 'overview',
-      message: 'overview',
+      message: 'message',
       history: 'history',
       proposal: 'proposal',
       review: 'review',
@@ -252,6 +251,9 @@ export function LeadDetailView({
         <TabsList className="w-full flex-wrap h-auto">
           <TabsTrigger value="overview" className="flex-1 min-w-[4.5rem]">
             {ru.leads.tabOverview}
+          </TabsTrigger>
+          <TabsTrigger value="message" className="flex-1 min-w-[4.5rem]">
+            {ru.leads.tabMessage}
           </TabsTrigger>
           <TabsTrigger value="proposal" className="flex-1 min-w-[3rem]">
             {ru.leads.tabProposal}
@@ -432,63 +434,21 @@ export function LeadDetailView({
               )}
               {ru.leads.auditSite}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGenerateAI}
-              disabled={isGenerating}
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {ru.leads.generateAIMessage}
-            </Button>
           </div>
+        </TabsContent>
 
-          <div id="lead-ai-message" className="space-y-2 scroll-mt-4">
-            <p className="text-sm font-medium">{ru.leads.copyMessage}</p>
-            {isGenerating && (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {ru.leads.generatingAIMessage}
-              </p>
-            )}
-            <div className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap">
-              {message}
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">{ru.leads.sendVia}</p>
-              <LeadOutreachActions lead={lead} message={message} />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={handleCopyMessage} className="gap-2">
-                <Copy className="h-4 w-4" />
-                {ru.leads.copyMessage}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void handleRegenerateAI()}
-                disabled={isGenerating || !hasOpenAIKey(apiKey)}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {ru.leads.regenerateAIMessage}
-              </Button>
-            </div>
-            <LeadMessageVariants
-              lead={lead}
-              onRestore={(variantId) => void handleRestoreVariant(variantId)}
-              restoringId={restoringVariantId}
-            />
-          </div>
+        <TabsContent value="message" className="space-y-4">
+          <LeadMessagePanel
+            lead={lead}
+            message={message}
+            isGenerating={isGenerating}
+            restoringVariantId={restoringVariantId}
+            canUseAI={hasOpenAIKey(apiKey)}
+            onCopy={() => void handleCopyMessage()}
+            onGenerate={() => void handleGenerateAI()}
+            onRegenerate={() => void handleRegenerateAI()}
+            onRestore={(variantId) => void handleRestoreVariant(variantId)}
+          />
         </TabsContent>
 
         <TabsContent value="proposal" className="space-y-4">

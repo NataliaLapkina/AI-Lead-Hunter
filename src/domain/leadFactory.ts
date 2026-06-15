@@ -8,9 +8,17 @@ import { generateId } from '@/lib/utils'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { createEmptyLeadContacts, normalizeLeadContacts } from '@/lib/leadContacts'
 import { splitWebsiteAndSourceUrl } from '@/lib/leadLinks'
+import { normalizeMessageHistory } from '@/lib/leadMessageHistory'
 
 export function createEmptyContacts(): Lead['contacts'] {
   return createEmptyLeadContacts()
+}
+
+export function normalizeLeadEntity(lead: Lead): Lead {
+  return {
+    ...lead,
+    messageHistory: normalizeMessageHistory(lead.messageHistory),
+  }
 }
 
 export function createLeadEntity(input: CreateLeadInput): Lead {
@@ -96,7 +104,10 @@ export function updateLeadEntity(lead: Lead, input: UpdateLeadInput): Lead {
     tags: input.tags ?? lead.tags,
     opportunities: input.opportunities ?? lead.opportunities ?? [],
     generatedMessage: input.generatedMessage ?? lead.generatedMessage,
-    messageHistory: input.messageHistory ?? lead.messageHistory,
+    messageHistory:
+      input.messageHistory !== undefined
+        ? normalizeMessageHistory(input.messageHistory)
+        : normalizeMessageHistory(lead.messageHistory),
     aiRecommendations: input.aiRecommendations ?? lead.aiRecommendations,
     siteAudit: input.siteAudit ?? lead.siteAudit,
     updatedAt: now,
