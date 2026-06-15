@@ -161,11 +161,31 @@ export interface AppIntegrations {
   lastSyncAt?: string
 }
 
+export type AICommunicationStyle = 'business' | 'friendly' | 'expert' | 'premium'
+
+export type AIMessageLength = 'short' | 'medium' | 'detailed'
+
+export type AIMessageGoal =
+  | 'introduction'
+  | 'followup'
+  | 'sell'
+  | 'contact_request'
+  | 'reactivation'
+
+export interface AISettings {
+  communicationStyle: AICommunicationStyle
+  messageLength: AIMessageLength
+  messageGoal: AIMessageGoal
+  offerTopic: string
+  useAutoSignature: boolean
+}
+
 export interface AppSettings {
   profile: AppProfile
   nichePresets: NichePreset[]
   plan: PlanType
   integrations: AppIntegrations
+  aiSettings: AISettings
 }
 
 export interface LeadFilters {

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings'
+import { AISettingsCard } from '@/components/settings/AISettingsCard'
 import { ThemeModeSelect } from '@/components/theme/ThemeModeSelect'
 import {
   AlertDialog,
@@ -266,6 +267,12 @@ export function SettingsPage() {
               <Button onClick={handleSaveProfile}>{ru.common.save}</Button>
             </CardContent>
           </Card>
+
+          <AISettingsCard
+            settings={settings}
+            profile={profile}
+            onSave={updateSettings}
+          />
 
           <Card>
             <CardHeader>

@@ -4,6 +4,7 @@ import { STORAGE_KEYS } from '@/lib/constants'
 import { buildInitialNichePresets, normalizeAppSettings } from '@/lib/nichePresets'
 import { normalizeNicheName } from '@/lib/nicheDisplay'
 import { createDefaultAppProfile } from '@/lib/senderProfile'
+import { DEFAULT_AI_SETTINGS } from '@/lib/aiMessageSettings'
 import { getStorageItem, setStorageItem } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 
@@ -13,6 +14,7 @@ function createDefaultSettings(): AppSettings {
     nichePresets: buildInitialNichePresets(),
     plan: 'free',
     integrations: { googleSheetsConnected: false },
+    aiSettings: DEFAULT_AI_SETTINGS,
   }
 }
 

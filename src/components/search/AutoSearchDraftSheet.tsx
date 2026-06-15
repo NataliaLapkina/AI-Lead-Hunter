@@ -62,7 +62,7 @@ export function AutoSearchDraftSheet({
   const handleRegenerateMessage = () => {
     setForm((prev) => {
       if (!prev) return prev
-      return { ...prev, generatedMessage: regenerateDraftMessage(prev, settings?.profile) }
+      return { ...prev, generatedMessage: regenerateDraftMessage(prev, settings?.profile, settings?.aiSettings) }
     })
   }
 

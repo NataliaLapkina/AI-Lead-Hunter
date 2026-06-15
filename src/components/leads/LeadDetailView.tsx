@@ -90,9 +90,9 @@ export function LeadDetailView({
 
   const apiKey = settings?.integrations.openaiApiKey
 
-  const fallbackMessage = buildOutreachMessage(lead, settings?.profile)
+  const fallbackMessage = buildOutreachMessage(lead, settings?.profile, settings?.aiSettings)
   const message = lead.generatedMessage
-    ? finalizeOutreachMessage(lead.generatedMessage, lead, settings?.profile)
+    ? finalizeOutreachMessage(lead.generatedMessage, lead, settings?.profile, settings?.aiSettings)
     : fallbackMessage
   const recommendations = buildRecommendations(lead.opportunities ?? [])
   const proposalTemplate = buildProposalTemplate(lead, settings?.profile)
@@ -139,7 +139,11 @@ export function LeadDetailView({
     }
     setIsGenerating(true)
     try {
-      const generated = await generateAIMessage(apiKey!, { lead, senderProfile: settings?.profile })
+      const generated = await generateAIMessage(apiKey!, {
+        lead,
+        senderProfile: settings?.profile,
+        aiSettings: settings?.aiSettings,
+      })
       await onUpdateLead(lead.id, { generatedMessage: generated })
       toast.success(ru.leads.messageGenerated)
     } catch (e) {

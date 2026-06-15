@@ -1,4 +1,4 @@
-import type { ImprovementOpportunity, Lead, AppProfile } from '@/domain/lead'
+import type { ImprovementOpportunity, Lead, AppProfile, AISettings, AIMessageGoal } from '@/domain/lead'
 import { ru } from '@/i18n/ru'
 import { getNicheOutreachRecommendations } from '@/features/leads/nicheOutreachRecommendations'
 import { isTechnicalLeadName, sanitizeLeadName } from '@/lib/leadLinks'
@@ -13,6 +13,14 @@ import {
   type SenderProfile,
 } from '@/lib/senderProfile'
 import { normalizePersonalVoice } from '@/lib/personalMessageVoice'
+import {
+  getClosingLine,
+  getConsequencesLine,
+  getValueLine,
+  LENGTH_BULLET_LIMIT,
+  normalizeAISettings,
+  STYLE_GREETINGS,
+} from '@/lib/aiMessageSettings'
 
 export { OUTREACH_SENDER, getSenderProfile, buildSenderSignature, getSenderDisplayName, resolveOutreachProfile }
 export { buildSenderSignature as buildMessageSignature } from '@/lib/senderProfile'
@@ -83,12 +91,15 @@ export function finalizeOutreachMessage(
   message: string,
   lead: Lead,
   senderProfile?: Partial<AppProfile> | null,
+  aiSettings?: Partial<AISettings> | null,
 ): string {
+  const settings = normalizeAISettings(aiSettings)
   const body = stripMessageSignature(message)
   const scrubbedBody = scrubTechnicalLeadNamesFromMessage(body, lead)
   const voicedBody = normalizePersonalVoice(scrubbedBody, senderProfile)
   const signature = buildSenderSignature(senderProfile)
-  if (!voicedBody) return signature
+  if (!voicedBody) return settings.useAutoSignature ? signature : ''
+  if (!settings.useAutoSignature) return voicedBody
   return `${voicedBody}\n${signature}`
 }
 
@@ -127,25 +138,72 @@ export function collectOutreachBullets(lead: Lead): string[] {
   return getNicheOutreachRecommendations(lead.niche).slice(0, 4)
 }
 
+function getOpeningLine(lead: Lead, goal: AIMessageGoal): string {
+  switch (goal) {
+    case 'followup':
+      return 'Писала вам ранее и хотела уточнить, удалось ли ознакомиться с предложением.'
+    case 'reactivation':
+      return 'Давно не общались — решила написать с актуальным предложением.'
+    case 'sell':
+    case 'contact_request':
+    case 'introduction':
+    default:
+      return getSafeLeadIntro(lead)
+  }
+}
+
+function getSpecializationBlock(
+  sender: ReturnType<typeof getSenderProfile>,
+  settings: AISettings,
+): string {
+  const specialization =
+    sender.specialization.trim() || DEFAULT_SENDER_PROFILE.specialization
+  const topic = settings.offerTopic.trim()
+
+  if (!topic) {
+    return `Я занимаюсь ${specialization}.`
+  }
+
+  if (settings.messageGoal === 'sell') {
+    return `Я занимаюсь ${specialization}.\nСейчас предлагаю: ${topic}.`
+  }
+
+  return `Я занимаюсь ${specialization}.\nФокус предложения: ${topic}.`
+}
+
 export function buildOutreachMessage(
   lead: Lead,
   senderProfile?: Partial<AppProfile>,
+  aiSettings?: Partial<AISettings> | null,
 ): string {
+  const settings = normalizeAISettings(aiSettings)
   const sender = getSenderProfile(senderProfile)
-  const bullets = collectOutreachBullets(lead)
+  const displayName =
+    getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
+  const greeting = STYLE_GREETINGS[settings.communicationStyle]
+  const bullets = collectOutreachBullets(lead).slice(0, LENGTH_BULLET_LIMIT[settings.messageLength])
   const bulletBlock = bullets.map((b) => `• ${b}`).join('\n')
-  const companyPhrase = getSafeLeadIntro(lead)
-  const displayName = getSenderDisplayName(sender) || getSenderDisplayName(DEFAULT_SENDER_PROFILE)
-  const specialization = sender.specialization.trim() || DEFAULT_SENDER_PROFILE.specialization
+  const opening = getOpeningLine(lead, settings.messageGoal)
+  const consequences = getConsequencesLine(settings.communicationStyle, settings.messageLength)
+  const valueLine = getValueLine(settings.communicationStyle, settings.messageLength)
+  const closing = getClosingLine(
+    settings.messageGoal,
+    settings.offerTopic,
+    settings.messageLength,
+  )
 
-  const body = `Здравствуйте!
-Меня зовут ${displayName}.
-Я занимаюсь ${specialization}.
-${companyPhrase}
-${bulletBlock}
-Эти моменты могут снижать количество обращений и доверие клиентов.
-Могу показать конкретные варианты улучшений и примеры решений.
-Если интересно — подготовлю краткий аудит без обязательств.`
+  const body = [
+    greeting,
+    `Меня зовут ${displayName}.`,
+    getSpecializationBlock(sender, settings),
+    opening,
+    bulletBlock,
+    consequences,
+    valueLine,
+    closing,
+  ]
+    .filter(Boolean)
+    .join('\n')
 
-  return finalizeOutreachMessage(body, lead, senderProfile)
+  return finalizeOutreachMessage(body, lead, senderProfile, settings)
 }

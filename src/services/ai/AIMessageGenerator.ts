@@ -9,19 +9,22 @@ import {
 import { getOpportunityLabel } from '@/features/leads/improvements'
 import { getNicheLabel } from '@/i18n/ru'
 import { getSenderDisplayName, buildSenderSignature, getSenderProfile } from '@/lib/senderProfile'
-import type { AppProfile } from '@/domain/lead'
+import type { AppProfile, AISettings } from '@/domain/lead'
+import { buildAISettingsPromptSection, normalizeAISettings } from '@/lib/aiMessageSettings'
 import { callOpenAI } from './openaiClient'
 
 export interface AIMessageInput {
   lead: Lead
   senderProfile?: Partial<AppProfile>
+  aiSettings?: Partial<AISettings> | null
 }
 
 export async function generateAIMessage(
   apiKey: string,
   input: AIMessageInput,
 ): Promise<string> {
-  const { lead, senderProfile } = input
+  const { lead, senderProfile, aiSettings } = input
+  const settings = normalizeAISettings(aiSettings)
   const sender = getSenderProfile(senderProfile)
   const displayName = getSenderDisplayName(sender)
 
@@ -31,7 +34,7 @@ export async function generateAIMessage(
 
   const nicheBullets = collectOutreachBullets(lead)
   const auditSummary = lead.siteAudit?.summary ?? ''
-  const referenceMessage = buildOutreachMessage(lead, senderProfile)
+  const referenceMessage = buildOutreachMessage(lead, senderProfile, settings)
   const signature = buildSenderSignature(senderProfile)
   const companyPhrase = getSafeLeadIntro(lead)
   const outreachLeadName = safeLeadName(lead)
@@ -49,12 +52,14 @@ export async function generateAIMessage(
 - ЗАПРЕЩЕНО: использовать fallback-имена вида "Нутрициолог из Авито", "Компания из VK" в тексте сообщения
 - Фраза о компании: "${companyPhrase}" — без упоминания ниши в скобках
 - Буллеты проблем — из списка рекомендаций для клиента (2–4 пункта)
-- Сохраняй структуру эталонного шаблона: приветствие → представление → специализация → изучила компанию → буллеты → последствия → предложение → аудит → подпись
-- Подпись в конце ТОЧНО в таком формате (только непустые строки из списка):
-${signature}
+- Сохраняй структуру эталонного шаблона: приветствие → представление → специализация → изучила компанию → буллеты → последствия → предложение → аудит${settings.useAutoSignature ? ' → подпись' : ''}
+${settings.useAutoSignature ? `- Подпись в конце ТОЧНО в таком формате (только непустые строки из списка):\n${signature}` : '- Не добавляй подпись в конец сообщения'}
 - ЗАПРЕЩЕНО: корпоративный стиль — "наша работа", "нашей работе", "мы сделали", "мы предлагаем", "наши специалисты", "наша компания", "рекомендовали бы нас"
 - ТОЛЬКО первое лицо единственного числа (женский род): моя работа, я помогла, я подготовила, порекомендовали бы меня
-- Без эмодзи`
+- Без эмодзи
+
+ПАРАМЕТРЫ ГЕНЕРАЦИИ:
+${buildAISettingsPromptSection(settings)}`
 
   const user = `Напиши персонализированное сообщение для клиента.
 
@@ -72,12 +77,12 @@ ${nicheBullets.map((b) => `• ${b}`).join('\n')}
 Эталон по структуре и тону:
 ${referenceMessage}
 
-Адаптируй буллеты под клиента. Не меняй имя и специализацию отправителя. Используй подпись из правил.`
+Адаптируй буллеты под клиента. Не меняй имя и специализацию отправителя.${settings.useAutoSignature ? ' Используй подпись из правил.' : ''}`
 
   const generated = await callOpenAI(apiKey, [
     { role: 'system', content: system },
     { role: 'user', content: user },
   ])
 
-  return finalizeOutreachMessage(generated, lead, senderProfile)
+  return finalizeOutreachMessage(generated, lead, senderProfile, settings)
 }

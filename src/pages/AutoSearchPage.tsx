@@ -28,7 +28,7 @@ export function AutoSearchPage() {
     setIsSearching(true)
     try {
       await new Promise((r) => setTimeout(r, 400))
-      const results = runAutoLeadSearch(params, settings?.profile)
+      const results = runAutoLeadSearch(params, settings?.profile, settings?.aiSettings)
       setDrafts(results)
     } finally {
       setIsSearching(false)

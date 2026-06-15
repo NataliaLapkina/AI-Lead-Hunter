@@ -3,6 +3,7 @@ import { SCHEMA_VERSION, STORAGE_KEYS } from './constants'
 import { resolveLeadSource } from './leadSources'
 import { normalizeNicheName } from './nicheDisplay'
 import { createDefaultAppProfile, normalizeAppProfile } from './senderProfile'
+import { normalizeAISettings } from './aiMessageSettings'
 import {
   buildInitialNichePresets,
   createDefaultNichePresets,
@@ -267,6 +268,16 @@ function migrateSettingsSenderProfileV15(): void {
   })
 }
 
+function migrateSettingsAISettingsV17(): void {
+  const settings = getStorageItem<AppSettings | null>(STORAGE_KEYS.SETTINGS, null)
+  if (!settings) return
+
+  setStorageItem(STORAGE_KEYS.SETTINGS, {
+    ...settings,
+    aiSettings: normalizeAISettings(settings.aiSettings),
+  })
+}
+
 export function runMigrations(): void {
   const current = getSchemaVersion()
 
@@ -322,6 +333,10 @@ export function runMigrations(): void {
 
   if (current < 15) {
     migrateSettingsSenderProfileV15()
+  }
+
+  if (current < 17) {
+    migrateSettingsAISettingsV17()
   }
 
   if (current < SCHEMA_VERSION) {
