@@ -47,6 +47,7 @@ export function createLeadEntity(input: CreateLeadInput): Lead {
     tags: input.tags,
     opportunities: input.opportunities ?? [],
     comments: [],
+    siteAudit: input.siteAudit,
     createdAt: now,
     updatedAt: now,
     activityLog: [activity],

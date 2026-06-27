@@ -6,6 +6,7 @@ import type {
   LeadFilters,
   LeadSort,
   ImportResult,
+  LeadDuplicateCriteria,
 } from '@/domain/lead'
 import { DEFAULT_LEAD_FILTERS } from '@/features/leads/leadFilters'
 import { repositories } from '@/repositories'
@@ -78,8 +79,8 @@ export function useLeads() {
   )
 
   const checkDuplicates = useCallback(
-    async (website?: string, email?: string) => {
-      return repositories.leads.findDuplicates(website, email)
+    async (criteria: LeadDuplicateCriteria) => {
+      return repositories.leads.findDuplicates(criteria)
     },
     [],
   )
@@ -92,6 +93,12 @@ export function useLeads() {
     },
     [refreshLeads],
   )
+
+  const loadDemoLeads = useCallback(async (): Promise<ImportResult> => {
+    const result = await repositories.leads.seedDemoLeads()
+    await refreshLeads()
+    return result
+  }, [refreshLeads])
 
   const addComment = useCallback(
     async (id: string, text: string) => {
@@ -115,6 +122,7 @@ export function useLeads() {
     updateStatus,
     checkDuplicates,
     importLeads,
+    loadDemoLeads,
     addComment,
     refreshLeads,
   }

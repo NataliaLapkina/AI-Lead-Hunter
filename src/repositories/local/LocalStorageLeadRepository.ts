@@ -5,6 +5,7 @@ import type {
   LeadFilters,
   LeadSort,
   ImportResult,
+  LeadDuplicateCriteria,
 } from '@/domain/lead'
 import type { ILeadRepository } from '@/repositories/interfaces/ILeadRepository'
 import { STORAGE_KEYS } from '@/lib/constants'
@@ -14,11 +15,11 @@ import {
   createLeadEntity,
   updateLeadEntity,
   normalizeLeadEntity,
-  normalizeWebsite,
-  normalizeEmail,
 } from '@/domain/leadFactory'
 import { appendComment } from '@/domain/leadComments'
+import { createDemoLeads } from '@/features/demo/demoLeads'
 import { IN_PROGRESS_STATUSES } from '@/features/leads/leadFilters'
+import { findMatchingLeads } from '@/lib/leadDuplicates'
 import { computeLeadScore, matchesPotentialFilter } from '@/lib/leadScore'
 
 export class LocalStorageLeadRepository implements ILeadRepository {
@@ -128,20 +129,8 @@ export class LocalStorageLeadRepository implements ILeadRepository {
     return leads
   }
 
-  async findDuplicates(website?: string, email?: string): Promise<Lead[]> {
-    const leads = this.getLeads()
-    const normalizedWebsite = normalizeWebsite(website)
-    const normalizedEmail = email ? normalizeEmail(email) : undefined
-
-    return leads.filter((lead) => {
-      if (normalizedWebsite && lead.website) {
-        if (normalizeWebsite(lead.website) === normalizedWebsite) return true
-      }
-      if (normalizedEmail && lead.contacts.email) {
-        if (normalizeEmail(lead.contacts.email) === normalizedEmail) return true
-      }
-      return false
-    })
+  async findDuplicates(criteria: LeadDuplicateCriteria): Promise<Lead[]> {
+    return findMatchingLeads(this.getLeads(), criteria)
   }
 
   async importLeads(newLeads: Lead[]): Promise<ImportResult> {
@@ -150,10 +139,12 @@ export class LocalStorageLeadRepository implements ILeadRepository {
 
     for (const lead of newLeads) {
       try {
-        const duplicates = await this.findDuplicates(
-          lead.website,
-          lead.contacts.email,
-        )
+        const duplicates = await this.findDuplicates({
+          website: lead.website,
+          sourceUrl: lead.sourceUrl,
+          email: lead.contacts.email,
+          phone: lead.contacts.phone,
+        })
         if (duplicates.length > 0) {
           result.skipped++
           continue
@@ -172,7 +163,27 @@ export class LocalStorageLeadRepository implements ILeadRepository {
   }
 
   async replaceAll(leads: Lead[]): Promise<void> {
-    this.saveLeads(leads)
+    this.saveLeads(leads.map(normalizeLeadEntity))
+  }
+
+  async seedDemoLeads(): Promise<ImportResult> {
+    const existing = this.getLeads()
+    if (existing.length > 0) {
+      return {
+        imported: 0,
+        skipped: existing.length,
+        errors: ['База лидов уже содержит записи'],
+      }
+    }
+
+    const demoLeads = createDemoLeads().map(normalizeLeadEntity)
+    this.saveLeads(demoLeads)
+
+    return {
+      imported: demoLeads.length,
+      skipped: 0,
+      errors: [],
+    }
   }
 
   async addComment(id: string, text: string): Promise<Lead> {

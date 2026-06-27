@@ -37,6 +37,7 @@ export function LeadsPage() {
     updateStatus,
     checkDuplicates,
     importLeads,
+    loadDemoLeads,
     addComment,
   } = useLeads()
 
@@ -104,6 +105,17 @@ export function LeadsPage() {
     openLeadSheet(lead.id, action.focus)
   }
 
+  const handleLoadDemoLeads = async () => {
+    const result = await loadDemoLeads()
+    if (result.imported > 0) {
+      toast.success(t('leads.demoLoaded', { count: result.imported }))
+      return
+    }
+    if (result.errors.length > 0) {
+      toast.error(result.errors[0])
+    }
+  }
+
   const handleCreateLead = async (data: CreateLeadInput) => {
     await createLead(data)
     toast.success(ru.toast.leadCreated)
@@ -159,8 +171,10 @@ export function LeadsPage() {
               icon={<Users className="h-10 w-10" />}
               title={ru.leads.emptyTitle}
               description={ru.leads.emptyDescription}
-              actionLabel={ru.leads.addLead}
-              onAction={() => openLeadForm()}
+              actionLabel={ru.leads.loadDemoLeads}
+              onAction={handleLoadDemoLeads}
+              secondaryActionLabel={ru.leads.addLead}
+              onSecondaryAction={() => openLeadForm()}
             />
           ) : (
             <>

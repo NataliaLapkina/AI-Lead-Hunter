@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Lead, CreateLeadInput, ImprovementOpportunity } from '@/domain/lead'
+import type { Lead, CreateLeadInput, ImprovementOpportunity, LeadDuplicateCriteria } from '@/domain/lead'
 import { LEAD_SOURCES } from '@/lib/constants'
 import { createLeadSchema } from '@/domain/validation'
 import { getSourceLabel, ru } from '@/i18n/ru'
@@ -35,7 +35,7 @@ interface LeadFormProps {
   lead?: Lead | null
   initialValues?: Partial<CreateLeadInput>
   onSubmit: (data: CreateLeadInput) => Promise<void>
-  onCheckDuplicates?: (website?: string, email?: string) => Promise<Lead[]>
+  onCheckDuplicates?: (criteria: LeadDuplicateCriteria) => Promise<Lead[]>
 }
 
 export function LeadForm({
@@ -157,7 +157,12 @@ export function LeadForm({
     }
 
     if (onCheckDuplicates && !lead) {
-      const duplicates = await onCheckDuplicates(website || undefined, email || undefined)
+      const duplicates = await onCheckDuplicates({
+        website: website || undefined,
+        sourceUrl: sourceUrl || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
+      })
       if (duplicates.length > 0) {
         setDuplicateWarning(true)
         return

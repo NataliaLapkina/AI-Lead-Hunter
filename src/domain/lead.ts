@@ -236,6 +236,7 @@ export interface CreateLeadInput {
   opportunities?: ImprovementOpportunity[]
   status?: LeadStatus
   generatedMessage?: string
+  siteAudit?: SiteAuditResult
 }
 
 export interface UpdateLeadInput extends Partial<CreateLeadInput> {
@@ -250,6 +251,13 @@ export interface ImportResult {
   imported: number
   skipped: number
   errors: string[]
+}
+
+export interface LeadDuplicateCriteria {
+  website?: string
+  sourceUrl?: string
+  email?: string
+  phone?: string
 }
 
 /** Черновик лида в режиме автопоиска (до сохранения в базу) */

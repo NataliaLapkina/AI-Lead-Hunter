@@ -5,23 +5,31 @@ import { StatsCards } from '@/components/analytics/StatsCards'
 import { StatusFunnel, NicheDistribution, ActivityTimeline } from '@/components/analytics/Charts'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
-import { useLeadStore } from '@/stores'
-import { ru } from '@/i18n/ru'
+import { useLeads } from '@/features/leads/hooks/useLeads'
+import { ru, t } from '@/i18n/ru'
+import { toast } from 'sonner'
 
 export function AnalyticsPage() {
   const analytics = useAnalytics()
-  const { leads, isLoading, fetchLeads } = useLeadStore()
+  const { leads, isLoading, loadDemoLeads } = useLeads()
   const [hasLoaded, setHasLoaded] = useState(false)
-
-  useEffect(() => {
-    fetchLeads()
-  }, [fetchLeads])
 
   useEffect(() => {
     if (!isLoading) setHasLoaded(true)
   }, [isLoading])
 
   const isEmpty = leads.length === 0
+
+  const handleLoadDemoLeads = async () => {
+    const result = await loadDemoLeads()
+    if (result.imported > 0) {
+      toast.success(t('leads.demoLoaded', { count: result.imported }))
+      return
+    }
+    if (result.errors.length > 0) {
+      toast.error(result.errors[0])
+    }
+  }
 
   return (
     <AppShell title={ru.analytics.title} subtitle={ru.analytics.subtitle}>
@@ -35,6 +43,8 @@ export function AnalyticsPage() {
           icon={<BarChart3 className="h-10 w-10" />}
           title={ru.analytics.emptyTitle}
           description={ru.analytics.emptyDescription}
+          actionLabel={ru.leads.loadDemoLeads}
+          onAction={handleLoadDemoLeads}
         />
       ) : (
         <div className="space-y-6">

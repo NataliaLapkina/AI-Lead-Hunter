@@ -27,6 +27,15 @@ export function isVkUrl(url: string): boolean {
   return lower.includes('vk.com') || lower.includes('vk.ru') || lower.includes('vk.me')
 }
 
+export function isTelegramUrl(url: string): boolean {
+  const lower = url.toLowerCase()
+  return (
+    lower.includes('t.me/') ||
+    lower.includes('telegram.me/') ||
+    lower.startsWith('tg://')
+  )
+}
+
 export function looksLikeUrl(value: string): boolean {
   const trimmed = value.trim()
   if (!trimmed) return false

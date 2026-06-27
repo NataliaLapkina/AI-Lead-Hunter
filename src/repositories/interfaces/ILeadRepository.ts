@@ -5,6 +5,7 @@ import type {
   LeadFilters,
   LeadSort,
   ImportResult,
+  LeadDuplicateCriteria,
 } from '@/domain/lead'
 
 export interface ILeadRepository {
@@ -14,8 +15,9 @@ export interface ILeadRepository {
   update(id: string, input: UpdateLeadInput): Promise<Lead>
   delete(id: string): Promise<void>
   findFiltered(filters: LeadFilters, sort: LeadSort): Promise<Lead[]>
-  findDuplicates(website?: string, email?: string): Promise<Lead[]>
+  findDuplicates(criteria: LeadDuplicateCriteria): Promise<Lead[]>
   importLeads(leads: Lead[]): Promise<ImportResult>
   replaceAll(leads: Lead[]): Promise<void>
+  seedDemoLeads(): Promise<ImportResult>
   addComment(id: string, text: string): Promise<Lead>
 }

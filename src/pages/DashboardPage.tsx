@@ -10,7 +10,7 @@ import { LeadForm } from '@/components/leads/LeadForm'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
 import { useLeads, useLead } from '@/features/leads/hooks/useLeads'
 import { useUIStore } from '@/stores'
-import { ru } from '@/i18n/ru'
+import { ru, t } from '@/i18n/ru'
 import { toast } from 'sonner'
 import { computeLeadNextAction } from '@/lib/leadNextAction'
 import type { CreateLeadInput, Lead } from '@/domain/lead'
@@ -18,7 +18,7 @@ import type { CreateLeadInput, Lead } from '@/domain/lead'
 export function DashboardPage() {
   const navigate = useNavigate()
   const analytics = useAnalytics()
-  const { leads, createLead, updateLead, deleteLead, updateStatus, checkDuplicates, addComment } = useLeads()
+  const { leads, createLead, updateLead, deleteLead, updateStatus, checkDuplicates, addComment, loadDemoLeads } = useLeads()
   const {
     selectedLeadId,
     editingLeadId,
@@ -45,6 +45,17 @@ export function DashboardPage() {
     toast.success(ru.toast.leadUpdated)
   }
 
+  const handleLoadDemoLeads = async () => {
+    const result = await loadDemoLeads()
+    if (result.imported > 0) {
+      toast.success(t('leads.demoLoaded', { count: result.imported }))
+      return
+    }
+    if (result.errors.length > 0) {
+      toast.error(result.errors[0])
+    }
+  }
+
   const isEmpty = leads.length === 0
 
   return (
@@ -55,8 +66,10 @@ export function DashboardPage() {
             icon={<Users className="h-10 w-10" />}
             title={ru.dashboard.emptyTitle}
             description={ru.dashboard.emptyDescription}
-            actionLabel={ru.dashboard.newSearch}
-            onAction={() => navigate('/search')}
+            actionLabel={ru.leads.loadDemoLeads}
+            onAction={handleLoadDemoLeads}
+            secondaryActionLabel={ru.dashboard.newSearch}
+            onSecondaryAction={() => navigate('/search')}
           />
         ) : (
           <div className="space-y-6">
