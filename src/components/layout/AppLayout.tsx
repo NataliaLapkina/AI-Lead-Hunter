@@ -1,7 +1,14 @@
 import { Sidebar, MobileNav } from '@/components/layout/Sidebar'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 
 export function AppLayout() {
+  const { pathname } = useLocation()
+  const isDashboard = pathname === '/'
+
+  if (isDashboard) {
+    return <Outlet />
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />

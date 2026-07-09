@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   QUERIES: 'alh_search_queries',
   SETTINGS: 'alh_settings',
   SCHEMA_VERSION: 'alh_schema_version',
+  ACTIVATION_FIRST_VISIT: 'alh_activation_first_visit',
 } as const
 
 export const SCHEMA_VERSION = 18

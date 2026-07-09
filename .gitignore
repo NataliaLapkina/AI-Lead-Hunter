@@ -1,11 +1,9 @@
 node_modules
 dist
 dist-ssr
-*.local
+*.local.json
 .env
 .env.*
 !.env.example
 .DS_Store
 
-# Старый вложенный клон репозитория (только .git + ТЗ)
-AI Lead Hunter/
