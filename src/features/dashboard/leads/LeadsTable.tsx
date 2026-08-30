@@ -1,4 +1,3 @@
-import { toast } from 'sonner'
 import {
   NlBadge,
   NlButton,
@@ -9,73 +8,33 @@ import {
   NlTableHeaderCell,
   NlTableRow,
 } from '@/components/nl'
+import type { DashboardTranslate } from '@/features/dashboard/i18n/dashboardI18n'
 import {
-  buildMockEmail,
   getStatusBadgeVariant,
-  getStatusLabel,
-  type DashboardKpiState,
   type DashboardLead,
+  type DashboardLeadStatus,
 } from '@/features/dashboard/dashboardMvpMock'
 
-export interface EmailGeneratedPayload {
-  lead: DashboardLead
-  company: string
-  draft: string
-}
-
 interface LeadsTableProps {
+  t: DashboardTranslate
   leads: DashboardLead[]
-  kpi: DashboardKpiState
-  searchNiche: string
-  onLeadsChange: (leads: DashboardLead[]) => void
-  onKpiChange: (kpi: DashboardKpiState) => void
-  onEmailGenerated: (payload: EmailGeneratedPayload) => void
+  onGenerateEmail: (lead: DashboardLead) => void
+  onSaveLead: (leadId: string) => void
 }
 
-export function LeadsTable({
-  leads,
-  kpi,
-  searchNiche,
-  onLeadsChange,
-  onKpiChange,
-  onEmailGenerated,
-}: LeadsTableProps) {
-  const handleSaveLead = (leadId: string) => {
-    onLeadsChange(
-      leads.map((lead) =>
-        lead.id === leadId && lead.status === 'new' ? { ...lead, status: 'saved' } : lead,
-      ),
-    )
-    onKpiChange({
-      ...kpi,
-      leadsUsed: Math.min(kpi.leadsLimit, kpi.leadsUsed + 1),
-    })
-    toast.success('Saved successfully')
-  }
+function statusLabel(t: DashboardTranslate, status: DashboardLeadStatus): string {
+  return t(status)
+}
 
-  const handleGenerateEmail = (lead: DashboardLead) => {
-    if (kpi.aiEmailsUsed >= kpi.aiEmailsLimit) return
-
-    const draft = buildMockEmail(searchNiche, lead.company)
-    onLeadsChange(
-      leads.map((item) => (item.id === lead.id ? { ...item, status: 'contacted' } : item)),
-    )
-    onKpiChange({
-      ...kpi,
-      aiEmailsUsed: Math.min(kpi.aiEmailsLimit, kpi.aiEmailsUsed + 1),
-    })
-    onEmailGenerated({ lead, company: lead.company, draft })
-    toast.success('Email generated')
-  }
-
+export function LeadsTable({ t, leads, onGenerateEmail, onSaveLead }: LeadsTableProps) {
   return (
     <NlTable>
       <NlTableHead>
         <NlTableRow>
-          <NlTableHeaderCell>Company</NlTableHeaderCell>
-          <NlTableHeaderCell>Website</NlTableHeaderCell>
-          <NlTableHeaderCell>Status</NlTableHeaderCell>
-          <NlTableHeaderCell>Action</NlTableHeaderCell>
+          <NlTableHeaderCell>{t('company')}</NlTableHeaderCell>
+          <NlTableHeaderCell>{t('website')}</NlTableHeaderCell>
+          <NlTableHeaderCell>{t('status')}</NlTableHeaderCell>
+          <NlTableHeaderCell>{t('action')}</NlTableHeaderCell>
         </NlTableRow>
       </NlTableHead>
       <NlTableBody>
@@ -85,21 +44,21 @@ export function LeadsTable({
             <NlTableCell className="text-[#6b7280]">{lead.website}</NlTableCell>
             <NlTableCell>
               <NlBadge variant={getStatusBadgeVariant(lead.status)}>
-                {getStatusLabel(lead.status)}
+                {statusLabel(t, lead.status)}
               </NlBadge>
             </NlTableCell>
             <NlTableCell>
               <div className="flex flex-wrap gap-2">
-                <NlButton size="sm" onClick={() => handleGenerateEmail(lead)}>
-                  Generate Email
+                <NlButton size="sm" onClick={() => onGenerateEmail(lead)}>
+                  {t('generateEmail')}
                 </NlButton>
                 <NlButton
                   size="sm"
                   variant="outline"
-                  onClick={() => handleSaveLead(lead.id)}
+                  onClick={() => onSaveLead(lead.id)}
                   disabled={lead.status !== 'new'}
                 >
-                  Save
+                  {t('save')}
                 </NlButton>
               </div>
             </NlTableCell>

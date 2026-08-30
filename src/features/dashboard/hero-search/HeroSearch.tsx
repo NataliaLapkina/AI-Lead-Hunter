@@ -1,46 +1,37 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { NlButton, NlCard, NlCardBody, NlInput } from '@/components/nl'
-import { buildMockLeads, type DashboardLead } from '@/features/dashboard/dashboardMvpMock'
+import type { DashboardTranslate } from '@/features/dashboard/i18n/dashboardI18n'
 
 interface HeroSearchProps {
-  onLeadsFound: (leads: DashboardLead[], niche: string) => void
+  t: DashboardTranslate
+  niche: string
+  isSearching: boolean
+  onNicheChange: (value: string) => void
+  onFindLeads: () => void
 }
 
-export function HeroSearch({ onLeadsFound }: HeroSearchProps) {
-  const [niche, setNiche] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-
-  const handleSearch = async () => {
-    const trimmed = niche.trim()
-    if (!trimmed) return
-
-    setIsSearching(true)
-    await new Promise((resolve) => setTimeout(resolve, 700))
-
-    const results = buildMockLeads(trimmed)
-    onLeadsFound(results, trimmed)
-    setIsSearching(false)
-    toast.success('Lead added')
-  }
-
+export function HeroSearch({ t, niche, isSearching, onNicheChange, onFindLeads }: HeroSearchProps) {
   return (
     <NlCard className="mx-auto max-w-2xl">
       <NlCardBody>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
             <NlInput
-              label="Niche"
-              placeholder="Enter niche or keyword (e.g. design agency)"
+              label={t('niche')}
+              placeholder={t('enterNiche')}
               value={niche}
-              onChange={(event) => setNiche(event.target.value)}
+              onChange={(event) => onNicheChange(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') void handleSearch()
+                if (event.key === 'Enter') onFindLeads()
               }}
             />
           </div>
-          <NlButton size="lg" onClick={() => void handleSearch()} disabled={isSearching || !niche.trim()}>
-            {isSearching ? 'Searching...' : 'Find leads'}
+          <NlButton
+            type="button"
+            size="lg"
+            onClick={onFindLeads}
+            disabled={isSearching || !niche.trim()}
+          >
+            {isSearching ? t('searching') : t('findLeads')}
           </NlButton>
         </div>
       </NlCardBody>

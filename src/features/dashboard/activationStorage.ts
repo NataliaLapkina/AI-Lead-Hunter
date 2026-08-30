@@ -12,7 +12,7 @@ export function completeOnboarding(): void {
 export type ActivationPhase = 'onboarding' | 'empty' | 'active'
 
 export function resolveActivationPhase(firstVisit: boolean, leadsCount: number): ActivationPhase {
+  if (leadsCount > 0) return 'active'
   if (firstVisit) return 'onboarding'
-  if (leadsCount === 0) return 'empty'
-  return 'active'
+  return 'empty'
 }
