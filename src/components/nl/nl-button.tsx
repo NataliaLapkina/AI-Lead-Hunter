@@ -31,12 +31,17 @@ export function NlButton({
   size = 'md',
   className,
   children,
+  type = 'button',
   disabled,
+  onClick,
   ...props
 }: NlButtonProps) {
   return (
     <button
-      type="button"
+      {...props}
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
       className={nlCn(
         'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111827]/20',
@@ -45,8 +50,6 @@ export function NlButton({
         sizeClasses[size],
         className,
       )}
-      disabled={disabled}
-      {...props}
     >
       {children}
     </button>
