@@ -5,3 +5,939 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ============================================================
+// USER / ПОЛЬЗОВАТЕЛЬ
+// BUSINESS / БИЗНЕС
+// MEMBERSHIP / УЧАСТИЕ
+// ============================================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships          Membership[]
+  decisions            Decision[]
+  assignedTasks        Task[]              @relation("TaskAssignee")
+  createdTasks         Task[]              @relation("TaskCreator")
+  interactions         Interaction[]
+  outcomes             Outcome[]
+  initiatedSearches    Search[]
+  imports              Import[]
+  duplicateResolutions DuplicateResolution[]
+}
+
+model Business {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships     Membership[]
+  offers          Offer[]
+  targetProfiles  TargetProfile[]
+  companies       Company[]
+  contacts        Contact[]
+  contactPoints   ContactPoint[]
+  knowledge       Knowledge[]
+  recommendations Recommendation[]
+  decisions       Decision[]
+  tasks           Task[]
+  interactions    Interaction[]
+  outcomes        Outcome[]
+  searches        Search[]
+  imports         Import[]
+}
+
+model Membership {
+  id         String         @id @default(cuid())
+  userId     String
+  businessId String
+  role       MembershipRole @default(MEMBER)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+
+// ============================================================
+// OFFER / ПРЕДЛОЖЕНИЕ
+// TARGET PROFILE / ЦЕЛЕВОЙ ПРОФИЛЬ
+// ============================================================
+
+model Offer {
+  id         String @id @default(cuid())
+  businessId String
+
+  name        String
+  description String?
+  problem     String?
+  isActive    Boolean @default(true)
+
+  priceFrom Decimal?
+  priceTo   Decimal?
+  currency  String?
+  priceNote String?
+
+  geography  String?
+  conditions String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  targetProfiles OfferTargetProfile[]
+  searches       Search[]
+
+  @@index([businessId])
+  @@index([businessId, isActive])
+}
+
+model TargetProfile {
+  id         String @id @default(cuid())
+  businessId String
+
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+
+  criteria          Json
+  suggestedCriteria Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  offers   OfferTargetProfile[]
+  searches Search[]
+
+  @@index([businessId])
+  @@index([businessId, isActive])
+}
+
+model OfferTargetProfile {
+  offerId         String
+  targetProfileId String
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  targetProfile TargetProfile @relation(fields: [targetProfileId], references: [id], onDelete: Cascade)
+
+  @@id([offerId, targetProfileId])
+  @@index([targetProfileId])
+}
+
+
+// ============================================================
+// COMPANY / КОМПАНИЯ
+// ============================================================
+
+model Company {
+  id         String @id @default(cuid())
+  businessId String
+
+  name    String
+  website String?
+  niche   String?
+  city    String?
+  region  String?
+  country String?
+  size    CompanySize?
+
+  origin    CompanyOrigin
+  originUrl String?
+
+  assessment       CompanyAssessment       @default(NOT_ASSESSED)
+  interactionStage CompanyInteractionStage @default(NO_CONTACT)
+  workState        CompanyWorkState        @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  contacts             Contact[]
+  contactPoints        ContactPoint[]
+  knowledge            Knowledge[]
+  recommendations      Recommendation[]
+  decisions            Decision[]
+  tasks                Task[]
+  interactions         Interaction[]
+  outcomes             Outcome[]
+  searchResults        SearchResult[]
+  duplicateResolutions DuplicateResolution[]
+  importResults        ImportResult[]
+
+  @@index([businessId])
+  @@index([businessId, assessment])
+  @@index([businessId, interactionStage])
+  @@index([businessId, workState])
+}
+
+
+// ============================================================
+// CONTACT / КОНТАКТНОЕ ЛИЦО
+// CONTACT POINT / СПОСОБ СВЯЗИ
+// ============================================================
+
+model Contact {
+  id         String @id @default(cuid())
+  businessId String
+  companyId  String
+
+  name     String
+  position String?
+  note     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  contactPoints ContactPoint[]
+  knowledge     Knowledge[]
+  interactions  Interaction[]
+  importResults ImportResult[]
+
+  @@index([businessId])
+  @@index([companyId])
+}
+
+model ContactPoint {
+  id         String @id @default(cuid())
+  businessId String
+  companyId  String
+  contactId  String?
+
+  type            ContactPointType
+  value           String
+  normalizedValue String
+
+  verificationStatus ContactPointVerificationStatus @default(UNVERIFIED)
+  isPrimary          Boolean                        @default(false)
+
+  sourceType  SourceType?
+  sourceLabel String?
+  sourceUrl   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  interactions  Interaction[]
+  importResults ImportResult[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([companyId, type, normalizedValue])
+}
+
+
+// ============================================================
+// KNOWLEDGE / ЗНАНИЯ
+// ============================================================
+
+model Knowledge {
+  id         String @id @default(cuid())
+  businessId String
+
+  companyId     String?
+  contactId     String?
+  interactionId String?
+  outcomeId     String?
+
+  content            String
+  type               KnowledgeType
+  verificationStatus KnowledgeVerificationStatus
+
+  sourceType  SourceType?
+  sourceLabel String?
+  sourceUrl   String?
+
+  obtainedAt    DateTime?
+  lastCheckedAt DateTime?
+
+  previousKnowledgeId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  interaction Interaction? @relation(fields: [interactionId], references: [id], onDelete: Restrict)
+
+  outcome Outcome? @relation(fields: [outcomeId], references: [id], onDelete: Restrict)
+
+  previousKnowledge Knowledge? @relation("KnowledgeHistory", fields: [previousKnowledgeId], references: [id], onDelete: Restrict)
+
+  newerKnowledge Knowledge[] @relation("KnowledgeHistory")
+
+  recommendationLinks RecommendationKnowledge[]
+  importResults       ImportResult[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([interactionId])
+  @@index([outcomeId])
+  @@index([previousKnowledgeId])
+  @@index([businessId, verificationStatus])
+}
+
+
+// ============================================================
+// RECOMMENDATION / РЕКОМЕНДАЦИЯ AI
+// DECISION / РЕШЕНИЕ
+// ============================================================
+
+model Recommendation {
+  id         String @id @default(cuid())
+  businessId String
+  companyId  String?
+
+  title       String
+  description String
+  reason      String
+
+  priority RecommendationPriority
+  status   RecommendationStatus @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  knowledgeLinks RecommendationKnowledge[]
+  decisions      Decision[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([businessId, status])
+  @@index([businessId, priority])
+}
+
+model RecommendationKnowledge {
+  recommendationId String
+  knowledgeId      String
+
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  knowledge Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+
+  @@id([recommendationId, knowledgeId])
+  @@index([knowledgeId])
+}
+
+model Decision {
+  id               String @id @default(cuid())
+  businessId       String
+  companyId        String?
+  recommendationId String?
+
+  title       String
+  description String?
+
+  decidedById String
+  status      DecisionStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  recommendation Recommendation? @relation(fields: [recommendationId], references: [id], onDelete: Restrict)
+
+  decidedBy User @relation(fields: [decidedById], references: [id], onDelete: Restrict)
+
+  tasks Task[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([recommendationId])
+  @@index([decidedById])
+  @@index([businessId, status])
+}
+
+
+// ============================================================
+// TASK / ЗАДАЧА
+// ============================================================
+
+model Task {
+  id         String @id @default(cuid())
+  businessId String
+  companyId  String?
+  decisionId String?
+
+  title       String
+  description String?
+
+  dueAt    DateTime?
+  priority TaskPriority @default(MEDIUM)
+  status   TaskStatus   @default(TODO)
+
+  assignedToId String?
+  createdById  String
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  decision Decision? @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+
+  assignedTo User? @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdBy User @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  interactions Interaction[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([decisionId])
+  @@index([assignedToId])
+  @@index([businessId, status])
+  @@index([businessId, dueAt])
+}
+
+
+// ============================================================
+// INTERACTION / ВЗАИМОДЕЙСТВИЕ
+// ============================================================
+
+model Interaction {
+  id         String @id @default(cuid())
+  businessId String
+  companyId  String
+
+  contactId      String?
+  contactPointId String?
+  taskId         String?
+
+  channel   InteractionChannel
+  direction InteractionDirection
+
+  summary String
+  content String?
+
+  occurredAt  DateTime
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  contactPoint ContactPoint? @relation(fields: [contactPointId], references: [id], onDelete: Restrict)
+
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Restrict)
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  knowledge Knowledge[]
+  outcomes  Outcome[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([contactPointId])
+  @@index([taskId])
+  @@index([businessId, occurredAt])
+  @@index([companyId, occurredAt])
+}
+
+
+// ============================================================
+// OUTCOME / РЕЗУЛЬТАТ
+// ============================================================
+
+model Outcome {
+  id            String @id @default(cuid())
+  businessId    String
+  companyId     String
+  interactionId String?
+
+  type    OutcomeType
+  summary String
+  reason  String?
+
+  occurredAt  DateTime
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  interaction Interaction? @relation(fields: [interactionId], references: [id], onDelete: Restrict)
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  knowledge Knowledge[]
+
+  @@index([businessId])
+  @@index([companyId])
+  @@index([interactionId])
+  @@index([businessId, occurredAt])
+  @@index([companyId, occurredAt])
+  @@index([businessId, type])
+}
+
+
+// ============================================================
+// SEARCH / ПОИСК
+// SEARCH RESULT / РЕЗУЛЬТАТ ПОИСКА
+// ============================================================
+
+model Search {
+  id              String @id @default(cuid())
+  businessId      String
+  offerId         String?
+  targetProfileId String?
+
+  name     String
+  criteria Json
+  sources  Json
+
+  status      SearchStatus @default(PENDING)
+  initiatedBy SearchInitiator
+
+  initiatedByUserId String?
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  offer Offer? @relation(fields: [offerId], references: [id], onDelete: Restrict)
+
+  targetProfile TargetProfile? @relation(fields: [targetProfileId], references: [id], onDelete: Restrict)
+
+  initiatedByUser User? @relation(fields: [initiatedByUserId], references: [id], onDelete: SetNull)
+
+  results SearchResult[]
+
+  @@index([businessId])
+  @@index([offerId])
+  @@index([targetProfileId])
+  @@index([initiatedByUserId])
+  @@index([businessId, status])
+  @@index([businessId, createdAt])
+}
+
+model SearchResult {
+  id        String @id @default(cuid())
+  searchId  String
+  companyId String
+
+  source    String
+  sourceUrl String?
+
+  foundAt DateTime @default(now())
+  isNew   Boolean
+
+  createdAt DateTime @default(now())
+
+  search Search @relation(fields: [searchId], references: [id], onDelete: Restrict)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@unique([searchId, companyId])
+  @@index([companyId])
+  @@index([searchId, foundAt])
+}
+
+
+// ============================================================
+// IMPORT / ИМПОРТ
+// ============================================================
+
+model Import {
+  id          String @id @default(cuid())
+  businessId  String
+  createdById String
+
+  fileName String
+  fileType ImportFileType
+  status   ImportStatus @default(UPLOADED)
+
+  totalRows Int?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  rows                 ImportRow[]
+  mappings             ImportMapping[]
+  duplicateResolutions DuplicateResolution[]
+  results              ImportResult[]
+
+  @@index([businessId])
+  @@index([createdById])
+  @@index([businessId, status])
+  @@index([businessId, createdAt])
+}
+
+model ImportRow {
+  id       String @id @default(cuid())
+  importId String
+
+  rowNumber Int
+  rawData   Json
+
+  createdAt DateTime @default(now())
+
+  import Import @relation(fields: [importId], references: [id], onDelete: Restrict)
+
+  duplicateResolution DuplicateResolution?
+  results             ImportResult[]
+
+  @@unique([importId, rowNumber])
+  @@index([importId])
+}
+
+model ImportMapping {
+  id       String @id @default(cuid())
+  importId String
+
+  sourceColumnIndex Int
+  sourceField       String
+
+  targetType  String?
+  targetField String?
+
+  origin      ImportMappingOrigin
+  needsReview Boolean @default(false)
+  confidence  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  import Import @relation(fields: [importId], references: [id], onDelete: Restrict)
+
+  @@unique([importId, sourceColumnIndex])
+  @@index([importId])
+  @@index([importId, needsReview])
+}
+
+model DuplicateResolution {
+  id          String @id @default(cuid())
+  importId    String
+  importRowId String @unique
+
+  candidates Json
+
+  resolution        DuplicateResolutionAction?
+  existingCompanyId String?
+
+  resolvedById String?
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  import Import @relation(fields: [importId], references: [id], onDelete: Restrict)
+
+  importRow ImportRow @relation(fields: [importRowId], references: [id], onDelete: Restrict)
+
+  existingCompany Company? @relation(fields: [existingCompanyId], references: [id], onDelete: Restrict)
+
+  resolvedBy User? @relation(fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([importId])
+  @@index([existingCompanyId])
+  @@index([resolvedById])
+}
+
+model ImportResult {
+  id          String @id @default(cuid())
+  importId    String
+  importRowId String
+
+  action     ImportResultAction
+  entityType ImportResultEntityType?
+
+  // Immutable ID / Неизменяемый ID объекта импорта.
+  // Сохраняется в истории даже после Safe Undo.
+  entityRecordId String?
+
+  companyId      String?
+  contactId      String?
+  contactPointId String?
+  knowledgeId    String?
+
+  // Before/after change snapshot for UPDATED/MERGED.
+  // Снимок изменений до/после для UPDATED/MERGED.
+  changeSet Json?
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  import Import @relation(fields: [importId], references: [id], onDelete: Restrict)
+
+  importRow ImportRow @relation(fields: [importRowId], references: [id], onDelete: Restrict)
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  contactPoint ContactPoint? @relation(fields: [contactPointId], references: [id], onDelete: SetNull)
+
+  knowledge Knowledge? @relation(fields: [knowledgeId], references: [id], onDelete: SetNull)
+
+  @@index([importId])
+  @@index([importRowId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([contactPointId])
+  @@index([knowledgeId])
+  @@index([entityRecordId])
+  @@index([importId, action])
+}
+
+
+// ============================================================
+// ENUMS / ПЕРЕЧИСЛЕНИЯ
+// ============================================================
+
+enum MembershipRole {
+  OWNER
+  MANAGER
+  MEMBER
+}
+
+enum CompanyAssessment {
+  NOT_ASSESSED
+  SUITABLE
+  NOT_SUITABLE
+}
+
+enum CompanyInteractionStage {
+  NO_CONTACT
+  CONTACTED
+  REPLIED
+  NEGOTIATION
+  CLIENT
+}
+
+enum CompanyWorkState {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum CompanySize {
+  MICRO
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum CompanyOrigin {
+  SEARCH
+  IMPORT
+  MANUAL
+}
+
+enum ContactPointType {
+  EMAIL
+  PHONE
+  TELEGRAM
+  VK
+  WHATSAPP
+  OTHER
+}
+
+enum ContactPointVerificationStatus {
+  VERIFIED
+  UNVERIFIED
+  INVALID
+  OUTDATED
+}
+
+enum KnowledgeType {
+  FACT
+  OBSERVATION
+  AI_INFERENCE
+  USER_INFO
+}
+
+enum KnowledgeVerificationStatus {
+  VERIFIED
+  NEEDS_VERIFICATION
+  ASSUMPTION
+  OUTDATED
+}
+
+enum SourceType {
+  USER
+  WEBSITE
+  SEARCH
+  IMPORT
+  INTERACTION
+  SYSTEM
+  OTHER
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  NEW
+  VIEWED
+  ACCEPTED
+  MODIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum DecisionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  SUPERSEDED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum InteractionChannel {
+  EMAIL
+  PHONE
+  TELEGRAM
+  VK
+  WHATSAPP
+  MEETING
+  OTHER
+}
+
+enum InteractionDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum OutcomeType {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  NO_RESPONSE
+}
+
+enum SearchStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SearchInitiator {
+  USER
+  SYSTEM
+  AUTOMATION
+}
+
+enum ImportFileType {
+  XLSX
+  CSV
+}
+
+enum ImportStatus {
+  UPLOADED
+  ANALYZING
+  REVIEW_REQUIRED
+  READY
+  IMPORTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ImportMappingOrigin {
+  AI_SUGGESTED
+  USER_CONFIRMED
+  USER_CHANGED
+  SKIPPED
+}
+
+enum DuplicateResolutionAction {
+  MERGE
+  CREATE_SEPARATELY
+  SKIP
+}
+
+enum ImportResultAction {
+  CREATED
+  UPDATED
+  MERGED
+  SKIPPED
+  FAILED
+}
+
+enum ImportResultEntityType {
+  COMPANY
+  CONTACT
+  CONTACT_POINT
+  KNOWLEDGE
+}
