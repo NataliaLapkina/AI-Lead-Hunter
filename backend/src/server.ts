@@ -4,6 +4,7 @@ import { registerListCompaniesRoute } from './api/companies/listCompaniesRoute.j
 import { registerStartCompanyWorkRoute } from './api/companies/startCompanyWorkRoute.js'
 import { registerUpdateCompanyAssessmentRoute } from './api/companies/updateCompanyAssessmentRoute.js'
 import { registerListSearchResultsRoute } from './api/searches/listSearchResultsRoute.js'
+import { registerGetSearchResultDetailRoute } from './api/searches/getSearchResultDetailRoute.js'
 import {
   checkDatabaseConnection,
   disconnectPrisma,
@@ -53,6 +54,7 @@ async function buildServer() {
   await registerUpdateCompanyAssessmentRoute(app, API_PREFIX)
   await registerStartCompanyWorkRoute(app, API_PREFIX)
   await registerListSearchResultsRoute(app, API_PREFIX)
+  await registerGetSearchResultDetailRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({
