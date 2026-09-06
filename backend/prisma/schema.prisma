@@ -767,6 +767,7 @@ enum CompanyInteractionStage {
 }
 
 enum CompanyWorkState {
+  NOT_STARTED
   ACTIVE
   PAUSED
   COMPLETED
