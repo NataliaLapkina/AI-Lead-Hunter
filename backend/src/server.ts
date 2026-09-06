@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
 import { registerListCompaniesRoute } from './api/companies/listCompaniesRoute.js'
+import { registerStartCompanyWorkRoute } from './api/companies/startCompanyWorkRoute.js'
 import { registerUpdateCompanyAssessmentRoute } from './api/companies/updateCompanyAssessmentRoute.js'
 import {
   checkDatabaseConnection,
@@ -49,6 +50,7 @@ async function buildServer() {
 
   await registerListCompaniesRoute(app, API_PREFIX)
   await registerUpdateCompanyAssessmentRoute(app, API_PREFIX)
+  await registerStartCompanyWorkRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({
