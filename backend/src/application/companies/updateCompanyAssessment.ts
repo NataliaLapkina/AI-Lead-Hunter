@@ -11,6 +11,7 @@ const ALLOWED_ASSESSMENTS = [
   'NOT_ASSESSED',
   'SUITABLE',
   'NOT_SUITABLE',
+  'UNDECIDED',
 ] as const
 
 type AllowedAssessment = (typeof ALLOWED_ASSESSMENTS)[number]

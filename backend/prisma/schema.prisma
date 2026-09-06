@@ -756,6 +756,7 @@ enum CompanyAssessment {
   NOT_ASSESSED
   SUITABLE
   NOT_SUITABLE
+  UNDECIDED
 }
 
 enum CompanyInteractionStage {
