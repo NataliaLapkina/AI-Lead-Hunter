@@ -162,7 +162,7 @@ model Company {
 
   assessment       CompanyAssessment       @default(NOT_ASSESSED)
   interactionStage CompanyInteractionStage @default(NO_CONTACT)
-  workState        CompanyWorkState        @default(ACTIVE)
+  workState        CompanyWorkState
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
