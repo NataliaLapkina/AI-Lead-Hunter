@@ -329,6 +329,9 @@ model Recommendation {
 
   snoozedUntil DateTime?
 
+  rejectionReason  RecommendationRejectionReason?
+  rejectionComment String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -844,6 +847,14 @@ enum RecommendationStatus {
   MODIFIED
   REJECTED
   EXPIRED
+}
+
+enum RecommendationRejectionReason {
+  NOT_RELEVANT
+  ALREADY_DONE
+  NOT_SUITABLE_FOR_COMPANY
+  NOT_PRIORITY
+  OTHER
 }
 
 enum DecisionStatus {
