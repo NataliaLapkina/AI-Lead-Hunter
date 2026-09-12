@@ -201,3 +201,85 @@ export async function runAcceptRecommendationTransaction<T>(
     return operation(createTransactionRepository(tx))
   })
 }
+
+export type SnoozedRecommendationRow = {
+  id: string
+  status: RecommendationStatus
+  snoozedUntil: Date
+  updatedAt: Date
+}
+
+export async function findRecommendationActionBusinessById(
+  businessId: string,
+) {
+  return prisma.business.findUnique({
+    where: { id: businessId },
+    select: { id: true },
+  })
+}
+
+export async function trySnoozeRecommendationAtomic(
+  businessId: string,
+  recommendationId: string,
+  snoozedUntil: Date,
+): Promise<SnoozedRecommendationRow | null> {
+  const rows = await prisma.$queryRaw<SnoozedRecommendationRow[]>`
+    UPDATE "Recommendation" AS recommendation
+    SET
+      status = CAST(${RecommendationStatus.VIEWED} AS "RecommendationStatus"),
+      "snoozedUntil" = ${snoozedUntil},
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE
+      recommendation.id = ${recommendationId}
+      AND recommendation."businessId" = ${businessId}
+      AND recommendation.status IN (
+        CAST(${RecommendationStatus.NEW} AS "RecommendationStatus"),
+        CAST(${RecommendationStatus.VIEWED} AS "RecommendationStatus")
+      )
+      AND ${snoozedUntil} > CURRENT_TIMESTAMP
+      AND (
+        recommendation."companyId" IS NULL
+        OR EXISTS (
+          SELECT 1
+          FROM "Company" AS company
+          WHERE company.id = recommendation."companyId"
+            AND company."businessId" = ${businessId}
+        )
+      )
+    RETURNING id, status, "snoozedUntil", "updatedAt"
+  `
+
+  return rows[0] ?? null
+}
+
+export async function findRecommendationSnoozeContextInBusiness(
+  businessId: string,
+  recommendationId: string,
+) {
+  return prisma.recommendation.findFirst({
+    where: {
+      id: recommendationId,
+      businessId,
+    },
+    select: {
+      id: true,
+      companyId: true,
+      status: true,
+    },
+  })
+}
+
+export async function recommendationCompanyBelongsToBusiness(
+  businessId: string,
+  companyId: string,
+): Promise<boolean> {
+  const company = await prisma.company.findFirst({
+    where: {
+      id: companyId,
+      businessId,
+    },
+    select: { id: true },
+  })
+
+  return company !== null
+}

@@ -4,6 +4,7 @@ import { registerListCompaniesRoute } from './api/companies/listCompaniesRoute.j
 import { registerStartCompanyWorkRoute } from './api/companies/startCompanyWorkRoute.js'
 import { registerUpdateCompanyAssessmentRoute } from './api/companies/updateCompanyAssessmentRoute.js'
 import { registerAcceptRecommendationRoute } from './api/recommendations/acceptRecommendationRoute.js'
+import { registerSnoozeRecommendationRoute } from './api/recommendations/snoozeRecommendationRoute.js'
 import { registerListSearchResultsRoute } from './api/searches/listSearchResultsRoute.js'
 import { registerGetSearchResultDetailRoute } from './api/searches/getSearchResultDetailRoute.js'
 import {
@@ -57,6 +58,7 @@ async function buildServer() {
   await registerListSearchResultsRoute(app, API_PREFIX)
   await registerGetSearchResultDetailRoute(app, API_PREFIX)
   await registerAcceptRecommendationRoute(app, API_PREFIX)
+  await registerSnoozeRecommendationRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({
