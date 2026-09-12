@@ -3,6 +3,7 @@ import Fastify from 'fastify'
 import { registerListCompaniesRoute } from './api/companies/listCompaniesRoute.js'
 import { registerStartCompanyWorkRoute } from './api/companies/startCompanyWorkRoute.js'
 import { registerUpdateCompanyAssessmentRoute } from './api/companies/updateCompanyAssessmentRoute.js'
+import { registerAcceptRecommendationRoute } from './api/recommendations/acceptRecommendationRoute.js'
 import { registerListSearchResultsRoute } from './api/searches/listSearchResultsRoute.js'
 import { registerGetSearchResultDetailRoute } from './api/searches/getSearchResultDetailRoute.js'
 import {
@@ -55,6 +56,7 @@ async function buildServer() {
   await registerStartCompanyWorkRoute(app, API_PREFIX)
   await registerListSearchResultsRoute(app, API_PREFIX)
   await registerGetSearchResultDetailRoute(app, API_PREFIX)
+  await registerAcceptRecommendationRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({
