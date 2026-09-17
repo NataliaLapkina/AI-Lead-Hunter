@@ -28,7 +28,7 @@ export type RecommendationDecision = {
   updatedAt: Date
 }
 
-export type AcceptRecommendationTransactionRepository = {
+export type RecommendationTransactionRepository = {
   businessExists(businessId: string): Promise<boolean>
   lockRecommendation(
     businessId: string,
@@ -45,7 +45,14 @@ export type AcceptRecommendationTransactionRepository = {
     recommendationId: string,
     companyId: string | null,
   ): Promise<RecommendationDecision | null>
+  findExistingDecisions(
+    businessId: string,
+    recommendationId: string,
+  ): Promise<RecommendationDecision[]>
   markRecommendationAccepted(
+    recommendationId: string,
+  ): Promise<{ id: string; status: RecommendationStatus; updatedAt: Date }>
+  markRecommendationModified(
     recommendationId: string,
   ): Promise<{ id: string; status: RecommendationStatus; updatedAt: Date }>
   createDecision(input: {
@@ -53,14 +60,14 @@ export type AcceptRecommendationTransactionRepository = {
     companyId: string | null
     recommendationId: string
     title: string
-    description: string
+    description: string | null
     decidedById: string
   }): Promise<RecommendationDecision>
 }
 
 function createTransactionRepository(
   tx: Prisma.TransactionClient,
-): AcceptRecommendationTransactionRepository {
+): RecommendationTransactionRepository {
   return {
     async businessExists(businessId) {
       const business = await tx.business.findUnique({
@@ -150,11 +157,54 @@ function createTransactionRepository(
       })
     },
 
+    findExistingDecisions(businessId, recommendationId) {
+      return tx.decision.findMany({
+        where: {
+          businessId,
+          recommendationId,
+        },
+        orderBy: [
+          {
+            createdAt: 'asc',
+          },
+          {
+            id: 'asc',
+          },
+        ],
+        select: {
+          id: true,
+          recommendationId: true,
+          companyId: true,
+          title: true,
+          description: true,
+          status: true,
+          decidedById: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+    },
+
     markRecommendationAccepted(recommendationId) {
       return tx.recommendation.update({
         where: { id: recommendationId },
         data: {
           status: RecommendationStatus.ACCEPTED,
+          snoozedUntil: null,
+        },
+        select: {
+          id: true,
+          status: true,
+          updatedAt: true,
+        },
+      })
+    },
+
+    markRecommendationModified(recommendationId) {
+      return tx.recommendation.update({
+        where: { id: recommendationId },
+        data: {
+          status: RecommendationStatus.MODIFIED,
           snoozedUntil: null,
         },
         select: {
@@ -194,7 +244,17 @@ function createTransactionRepository(
 
 export async function runAcceptRecommendationTransaction<T>(
   operation: (
-    repository: AcceptRecommendationTransactionRepository,
+    repository: RecommendationTransactionRepository,
+  ) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    return operation(createTransactionRepository(tx))
+  })
+}
+
+export async function runModifyRecommendationTransaction<T>(
+  operation: (
+    repository: RecommendationTransactionRepository,
   ) => Promise<T>,
 ): Promise<T> {
   return prisma.$transaction(async (tx) => {
