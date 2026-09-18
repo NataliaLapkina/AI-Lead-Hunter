@@ -327,6 +327,84 @@ export async function findRecommendationActionBusinessById(
   })
 }
 
+export async function findRecommendationsNeedingDecision(
+  businessId: string,
+  now: Date,
+) {
+  return prisma.recommendation.findMany({
+    where: {
+      businessId,
+      status: {
+        in: [RecommendationStatus.NEW, RecommendationStatus.VIEWED],
+      },
+      AND: [
+        {
+          OR: [
+            { snoozedUntil: null },
+            {
+              snoozedUntil: {
+                lte: now,
+              },
+            },
+          ],
+        },
+        {
+          OR: [
+            { companyId: null },
+            {
+              company: {
+                businessId,
+              },
+            },
+          ],
+        },
+      ],
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      reason: true,
+      priority: true,
+      status: true,
+      snoozedUntil: true,
+      createdAt: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      knowledgeLinks: {
+        where: {
+          knowledge: {
+            businessId,
+          },
+        },
+        orderBy: {
+          knowledgeId: 'asc',
+        },
+        select: {
+          knowledge: {
+            select: {
+              id: true,
+              content: true,
+              type: true,
+              verificationStatus: true,
+              sourceType: true,
+              sourceLabel: true,
+              sourceUrl: true,
+              obtainedAt: true,
+              lastCheckedAt: true,
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
 export async function trySnoozeRecommendationAtomic(
   businessId: string,
   recommendationId: string,
