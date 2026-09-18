@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Toaster } from 'sonner'
 import { router } from '@/app/router'
+import { CurrentBusinessProvider } from '@/features/business/CurrentBusinessContext'
 import { ThemeProvider, useTheme } from '@/features/theme/ThemeProvider'
 import { useSettingsStore } from '@/stores'
 
@@ -23,8 +24,10 @@ function ThemedToaster() {
 export function AppProviders() {
   return (
     <ThemeProvider>
-      <AppBootstrap />
-      <ThemedToaster />
+      <CurrentBusinessProvider>
+        <AppBootstrap />
+        <ThemedToaster />
+      </CurrentBusinessProvider>
     </ThemeProvider>
   )
 }
