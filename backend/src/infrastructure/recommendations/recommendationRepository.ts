@@ -1,5 +1,6 @@
 import {
   DecisionStatus,
+  RecommendationRejectionReason,
   RecommendationStatus,
   type Prisma,
 } from '@prisma/client'
@@ -12,6 +13,17 @@ export type LockedRecommendation = {
   title: string
   description: string
   status: RecommendationStatus
+  snoozedUntil: Date | null
+  rejectionReason: RecommendationRejectionReason | null
+  rejectionComment: string | null
+  updatedAt: Date
+}
+
+export type RejectedRecommendation = {
+  id: string
+  status: RecommendationStatus
+  rejectionReason: RecommendationRejectionReason | null
+  rejectionComment: string | null
   snoozedUntil: Date | null
   updatedAt: Date
 }
@@ -55,6 +67,11 @@ export type RecommendationTransactionRepository = {
   markRecommendationModified(
     recommendationId: string,
   ): Promise<{ id: string; status: RecommendationStatus; updatedAt: Date }>
+  markRecommendationRejected(input: {
+    recommendationId: string
+    rejectionReason: RecommendationRejectionReason
+    rejectionComment: string | null
+  }): Promise<RejectedRecommendation>
   createDecision(input: {
     businessId: string
     companyId: string | null
@@ -88,6 +105,8 @@ function createTransactionRepository(
           description,
           status,
           "snoozedUntil",
+          "rejectionReason",
+          "rejectionComment",
           "updatedAt"
         FROM "Recommendation"
         WHERE id = ${recommendationId}
@@ -215,6 +234,26 @@ function createTransactionRepository(
       })
     },
 
+    markRecommendationRejected(input) {
+      return tx.recommendation.update({
+        where: { id: input.recommendationId },
+        data: {
+          status: RecommendationStatus.REJECTED,
+          rejectionReason: input.rejectionReason,
+          rejectionComment: input.rejectionComment,
+          snoozedUntil: null,
+        },
+        select: {
+          id: true,
+          status: true,
+          rejectionReason: true,
+          rejectionComment: true,
+          snoozedUntil: true,
+          updatedAt: true,
+        },
+      })
+    },
+
     createDecision(input) {
       return tx.decision.create({
         data: {
@@ -253,6 +292,16 @@ export async function runAcceptRecommendationTransaction<T>(
 }
 
 export async function runModifyRecommendationTransaction<T>(
+  operation: (
+    repository: RecommendationTransactionRepository,
+  ) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    return operation(createTransactionRepository(tx))
+  })
+}
+
+export async function runRejectRecommendationTransaction<T>(
   operation: (
     repository: RecommendationTransactionRepository,
   ) => Promise<T>,
