@@ -16,7 +16,7 @@ export const ru = {
   nav: {
     dashboard: 'Главная',
     search: 'Поиск',
-    leads: 'Лиды',
+    leads: 'Компании',
     analytics: 'Аналитика',
     settings: 'Настройки',
   },
