@@ -1,5 +1,5 @@
-import { DashboardMvpView } from '@/components/dashboard/DashboardMvpView'
+import { TodayView } from '@/features/today/TodayView'
 
 export function DashboardPage() {
-  return <DashboardMvpView />
+  return <TodayView />
 }
