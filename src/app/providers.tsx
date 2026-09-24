@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Toaster } from 'sonner'
 import { router } from '@/app/router'
 import { CurrentBusinessProvider } from '@/features/business/CurrentBusinessContext'
+import { CurrentUserProvider } from '@/features/user/CurrentUserContext'
 import { ThemeProvider, useTheme } from '@/features/theme/ThemeProvider'
 import { useSettingsStore } from '@/stores'
 
@@ -25,8 +26,10 @@ export function AppProviders() {
   return (
     <ThemeProvider>
       <CurrentBusinessProvider>
-        <AppBootstrap />
-        <ThemedToaster />
+        <CurrentUserProvider>
+          <AppBootstrap />
+          <ThemedToaster />
+        </CurrentUserProvider>
       </CurrentBusinessProvider>
     </ThemeProvider>
   )
