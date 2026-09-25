@@ -25,6 +25,7 @@ export function NeedsDecisionSection() {
         isLoading={isLoading}
         error={error}
         onRetry={refetch}
+        onActionSuccess={refetch}
       />
     </section>
   )
@@ -36,12 +37,14 @@ function NeedsDecisionSectionBody({
   isLoading,
   error,
   onRetry,
+  onActionSuccess,
 }: {
   businessId: string | null
   data: ReturnType<typeof useNeedsDecisionRecommendations>['data']
   isLoading: boolean
   error: Error | null
   onRetry: () => void
+  onActionSuccess: () => void
 }) {
   if (businessId === null) {
     return (
@@ -83,7 +86,11 @@ function NeedsDecisionSectionBody({
   return (
     <div className="space-y-4">
       {recommendations.map((recommendation) => (
-        <NeedsDecisionCard key={recommendation.id} recommendation={recommendation} />
+        <NeedsDecisionCard
+          key={recommendation.id}
+          recommendation={recommendation}
+          onActionSuccess={onActionSuccess}
+        />
       ))}
     </div>
   )

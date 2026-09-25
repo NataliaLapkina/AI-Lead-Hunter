@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NeedsDecisionRecommendationKnowledge } from '@/domain/recommendations/needsDecision'
+import { ru } from '@/i18n/ru'
 import {
   getKnowledgeDisplayDate,
   getKnowledgeSourceLabel,
@@ -31,6 +32,14 @@ function knowledge(
 }
 
 describe('needsDecisionPresentation', () => {
+  it('keeps Today card copy for company, why-AI, and knowledge provenance', () => {
+    expect(ru.today.whyAiDecided).toBe('Почему AI так решил?')
+    expect(ru.today.aiRationale).toBe('Обоснование AI')
+    expect(ru.today.supportingKnowledge).toBe(
+      'Знания, на которых основана рекомендация',
+    )
+  })
+
   it('maps every Recommendation priority to a distinct RU label', () => {
     expect(getPriorityLabel('LOW')).toBe('Низкий приоритет')
     expect(getPriorityLabel('MEDIUM')).toBe('Средний приоритет')

@@ -4,6 +4,7 @@ import type { NeedsDecisionRecommendation } from '@/domain/recommendations/needs
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RecommendationActionBar } from '@/features/today/RecommendationActionBar'
 import {
   getKnowledgeDisplayDate,
   getKnowledgeSourceLabel,
@@ -40,9 +41,13 @@ const VERIFICATION_BADGE_VARIANT = {
 
 interface NeedsDecisionCardProps {
   recommendation: NeedsDecisionRecommendation
+  onActionSuccess: () => void
 }
 
-export function NeedsDecisionCard({ recommendation }: NeedsDecisionCardProps) {
+export function NeedsDecisionCard({
+  recommendation,
+  onActionSuccess,
+}: NeedsDecisionCardProps) {
   const whyId = useId()
   const [isWhyOpen, setIsWhyOpen] = useState(false)
   const description = presentText(recommendation.description)
@@ -108,6 +113,12 @@ export function NeedsDecisionCard({ recommendation }: NeedsDecisionCardProps) {
           </div>
         </CardContent>
       ) : null}
+      <CardContent className={canExplain ? 'pt-0' : undefined}>
+        <RecommendationActionBar
+          recommendationId={recommendation.id}
+          onSuccess={onActionSuccess}
+        />
+      </CardContent>
     </Card>
   )
 }

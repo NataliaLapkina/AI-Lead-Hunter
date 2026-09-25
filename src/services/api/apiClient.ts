@@ -66,17 +66,10 @@ async function readJsonBody(response: Response): Promise<unknown> {
   }
 }
 
-export async function apiGet<T>(
-  path: string,
-  options?: { signal?: AbortSignal },
-): Promise<T> {
+async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
   assertOriginAbsoluteApiPath(path)
 
-  const response = await fetch(path, {
-    method: 'GET',
-    signal: options?.signal,
-  })
-
+  const response = await fetch(path, init)
   const body = await readJsonBody(response)
 
   if (!response.ok) {
@@ -101,4 +94,29 @@ export async function apiGet<T>(
   }
 
   return body.data as T
+}
+
+export async function apiGet<T>(
+  path: string,
+  options?: { signal?: AbortSignal },
+): Promise<T> {
+  return apiRequest<T>(path, {
+    method: 'GET',
+    signal: options?.signal,
+  })
+}
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  options?: { signal?: AbortSignal },
+): Promise<T> {
+  return apiRequest<T>(path, {
+    method: 'POST',
+    signal: options?.signal,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
 }
