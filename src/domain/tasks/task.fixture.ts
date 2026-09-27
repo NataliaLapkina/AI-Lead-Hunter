@@ -1,0 +1,16 @@
+export const createdTaskFixture = {
+  id: 'task_1',
+  businessId: 'biz_1',
+  companyId: 'company_1',
+  decisionId: 'dec_1',
+  title: 'Позвонить сегодня',
+  description: null,
+  dueAt: '2026-09-28T06:00:00.000Z',
+  priority: 'MEDIUM',
+  status: 'TODO',
+  assignedToId: 'user_1',
+  createdById: 'user_1',
+  completedAt: null,
+  createdAt: '2026-09-27T10:00:00.000Z',
+  updatedAt: '2026-09-27T10:00:00.000Z',
+} as const

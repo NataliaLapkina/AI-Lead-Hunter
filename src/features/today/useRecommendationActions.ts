@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  parseAcceptRecommendationResult,
+  type AcceptedDecision,
+} from '@/domain/decisions/decision'
+import {
   getRecommendationActionErrorMessage,
   isAbortError,
   parseActorUserId,
@@ -42,6 +46,11 @@ export function createRecommendationActionHandlers(deps: {
   getRecommendationId: () => string
   isCurrent: () => boolean
   api: RecommendationActionApi
+  onAccepted: (input: {
+    businessId: string
+    recommendationId: string
+    decision: AcceptedDecision
+  }) => void
   onSuccess: (businessId: string) => void
 }) {
   let inFlight = false
@@ -135,17 +144,38 @@ export function createRecommendationActionHandlers(deps: {
       return { status: 'error', message: ru.today.missingUser }
     }
 
-    return runRequest(
-      businessId,
-      (signal) =>
-        deps.api.acceptRecommendation({
+    try {
+      const result = parseAcceptRecommendationResult(
+        await deps.api.acceptRecommendation({
           businessId,
           recommendationId,
           decidedById: userId,
-          signal,
+          signal: started.controller.signal,
         }),
-      started,
-    )
+      )
+
+      if (!isCurrentOutcome(started.generation, businessId)) {
+        return { status: 'ignored' }
+      }
+
+      deps.onAccepted({
+        businessId,
+        recommendationId,
+        decision: result.decision,
+      })
+      return { status: 'success' }
+    } catch (error) {
+      if (isAbortError(error) || !isCurrentOutcome(started.generation, businessId)) {
+        return { status: 'ignored' }
+      }
+
+      return {
+        status: 'error',
+        message: getRecommendationActionErrorMessage(error),
+      }
+    } finally {
+      finish(started.generation)
+    }
   }
 
   async function snoozePreset(preset: SnoozePresetKey): Promise<RecommendationActionAttempt> {
@@ -289,6 +319,11 @@ export function createRecommendationActionHandlers(deps: {
 
 export function useRecommendationActions(input: {
   recommendationId: string
+  onAccepted: (input: {
+    businessId: string
+    recommendationId: string
+    decision: AcceptedDecision
+  }) => void
   onSuccess: () => void
 }) {
   const { businessId } = useCurrentBusiness()
@@ -298,10 +333,12 @@ export function useRecommendationActions(input: {
   const mountedRef = useRef(true)
   const businessIdRef = useRef(businessId)
   const userIdRef = useRef(userId)
+  const onAcceptedRef = useRef(input.onAccepted)
   const onSuccessRef = useRef(input.onSuccess)
 
   businessIdRef.current = businessId
   userIdRef.current = userId
+  onAcceptedRef.current = input.onAccepted
   onSuccessRef.current = input.onSuccess
 
   const recommendationIdRef = useRef(input.recommendationId)
@@ -318,6 +355,9 @@ export function useRecommendationActions(input: {
         snoozeRecommendation,
         modifyRecommendation,
         rejectRecommendation,
+      },
+      onAccepted: (accepted) => {
+        onAcceptedRef.current(accepted)
       },
       onSuccess: () => {
         onSuccessRef.current()

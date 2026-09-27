@@ -6,6 +6,7 @@ import {
   RECOMMENDATION_REJECTION_REASONS,
   type RecommendationRejectionReason,
 } from '@/domain/recommendations/recommendationActions'
+import type { AcceptedDecision } from '@/domain/decisions/decision'
 import { useRecommendationActions } from '@/features/today/useRecommendationActions'
 import { getSnoozeDateInputMin } from '@/features/today/snoozePresets'
 import { ru } from '@/i18n/ru'
@@ -14,9 +15,15 @@ type ActionPanel = 'idle' | 'snooze' | 'modify' | 'reject'
 
 export function RecommendationActionBar({
   recommendationId,
+  onAccepted,
   onSuccess,
 }: {
   recommendationId: string
+  onAccepted: (input: {
+    businessId: string
+    recommendationId: string
+    decision: AcceptedDecision
+  }) => void
   onSuccess: () => void
 }) {
   const {
@@ -30,6 +37,7 @@ export function RecommendationActionBar({
     clearActionError,
   } = useRecommendationActions({
     recommendationId,
+    onAccepted,
     onSuccess,
   })
   const [panel, setPanel] = useState<ActionPanel>('idle')

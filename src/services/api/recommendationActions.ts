@@ -1,3 +1,7 @@
+import {
+  parseAcceptRecommendationResult,
+  type AcceptRecommendationResult,
+} from '@/domain/decisions/decision'
 import { recommendationActionPath } from '@/domain/recommendations/recommendationActions'
 import { apiPost } from '@/services/api/apiClient'
 
@@ -9,12 +13,14 @@ type RecommendationActionOptions = {
 
 export async function acceptRecommendation(
   input: RecommendationActionOptions & { decidedById: string },
-): Promise<unknown> {
-  return apiPost(
+): Promise<AcceptRecommendationResult> {
+  const data = await apiPost<unknown>(
     recommendationActionPath(input.businessId, input.recommendationId, 'accept'),
     { decidedById: input.decidedById },
     { signal: input.signal },
   )
+
+  return parseAcceptRecommendationResult(data)
 }
 
 export async function snoozeRecommendation(

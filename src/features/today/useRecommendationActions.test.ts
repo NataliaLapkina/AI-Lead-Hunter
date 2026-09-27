@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+import { acceptResultFixture } from '@/domain/decisions/decision.fixture'
+import {
+  InvalidAcceptResponseError,
+  type AcceptedDecision,
+  type AcceptRecommendationResult,
+} from '@/domain/decisions/decision'
 import { BackendApiError } from '@/services/api/apiClient'
 import { ru } from '@/i18n/ru'
 import {
@@ -8,7 +14,7 @@ import {
 
 function createApi(overrides: Partial<RecommendationActionApi> = {}): RecommendationActionApi {
   return {
-    acceptRecommendation: vi.fn().mockResolvedValue({}),
+    acceptRecommendation: vi.fn().mockResolvedValue(acceptResultFixture),
     snoozeRecommendation: vi.fn().mockResolvedValue({}),
     modifyRecommendation: vi.fn().mockResolvedValue({}),
     rejectRecommendation: vi.fn().mockResolvedValue({}),
@@ -21,11 +27,17 @@ function createHandlers(options?: {
   userId?: string | null
   recommendationId?: string
   api?: RecommendationActionApi
+  onAccepted?: (input: {
+    businessId: string
+    recommendationId: string
+    decision: AcceptedDecision
+  }) => void
   onSuccess?: (businessId: string) => void
   isCurrent?: () => boolean
 }) {
   let businessId = options?.businessId === undefined ? 'biz_1' : options.businessId
   const api = options?.api ?? createApi()
+  const onAccepted = options?.onAccepted ?? vi.fn()
   const onSuccess = options?.onSuccess ?? vi.fn()
 
   const handlers = createRecommendationActionHandlers({
@@ -34,12 +46,14 @@ function createHandlers(options?: {
     getRecommendationId: () => options?.recommendationId ?? 'rec_1',
     isCurrent: options?.isCurrent ?? (() => true),
     api,
+    onAccepted,
     onSuccess,
   })
 
   return {
     handlers,
     api,
+    onAccepted,
     onSuccess,
     setBusinessId: (next: string | null) => {
       businessId = next
@@ -48,8 +62,8 @@ function createHandlers(options?: {
 }
 
 describe('createRecommendationActionHandlers', () => {
-  it('accepts with the current user and refetches the current Business', async () => {
-    const { handlers, api, onSuccess } = createHandlers()
+  it('accepts with the current user and keeps the Decision without refetch', async () => {
+    const { handlers, api, onAccepted, onSuccess } = createHandlers()
 
     await expect(handlers.accept()).resolves.toEqual({ status: 'success' })
     expect(api.acceptRecommendation).toHaveBeenCalledWith(
@@ -59,11 +73,39 @@ describe('createRecommendationActionHandlers', () => {
         decidedById: 'user_1',
       }),
     )
-    expect(onSuccess).toHaveBeenCalledWith('biz_1')
+    expect(onAccepted).toHaveBeenCalledWith({
+      businessId: 'biz_1',
+      recommendationId: 'rec_1',
+      decision: acceptResultFixture.decision,
+    })
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('does not open Post-Accept when Decision is missing or malformed', async () => {
+    const api = createApi({
+      acceptRecommendation: vi.fn().mockResolvedValue({ recommendation: { id: 'rec_1' } }),
+    })
+    const { handlers, onAccepted, onSuccess } = createHandlers({ api })
+
+    await expect(handlers.accept()).resolves.toEqual({
+      status: 'error',
+      message: ru.today.actionErrors.invalidAcceptDecision,
+    })
+    expect(onAccepted).not.toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+    await expect(
+      createApi({
+        acceptRecommendation: vi.fn().mockRejectedValue(new InvalidAcceptResponseError()),
+      }).acceptRecommendation({
+        businessId: 'biz_1',
+        recommendationId: 'rec_1',
+        decidedById: 'user_1',
+      }),
+    ).rejects.toBeInstanceOf(InvalidAcceptResponseError)
   })
 
   it('does not POST Accept or Modify without a userId', async () => {
-    const { handlers, api, onSuccess } = createHandlers({ userId: null })
+    const { handlers, api, onAccepted, onSuccess } = createHandlers({ userId: null })
 
     await expect(handlers.accept()).resolves.toEqual({
       status: 'error',
@@ -76,6 +118,7 @@ describe('createRecommendationActionHandlers', () => {
     expect(api.acceptRecommendation).not.toHaveBeenCalled()
     expect(api.modifyRecommendation).not.toHaveBeenCalled()
     expect(onSuccess).not.toHaveBeenCalled()
+    expect(onAccepted).not.toHaveBeenCalled()
   })
 
   it('keeps the card when Accept fails and maps the backend code', async () => {
@@ -84,12 +127,13 @@ describe('createRecommendationActionHandlers', () => {
         new BackendApiError(409, 'RECOMMENDATION_STATUS_CONFLICT', 'raw', {}),
       ),
     })
-    const { handlers, onSuccess } = createHandlers({ api })
+    const { handlers, onAccepted, onSuccess } = createHandlers({ api })
 
     await expect(handlers.accept()).resolves.toEqual({
       status: 'error',
       message: ru.today.actionErrors.statusConflict,
     })
+    expect(onAccepted).not.toHaveBeenCalled()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
@@ -183,11 +227,11 @@ describe('createRecommendationActionHandlers', () => {
   })
 
   it('does not start a second request while one is in flight', async () => {
-    let resolveAccept: ((value: unknown) => void) | undefined
+    let resolveAccept: ((value: AcceptRecommendationResult) => void) | undefined
     const api = createApi({
       acceptRecommendation: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<AcceptRecommendationResult>((resolve) => {
             resolveAccept = resolve
           }),
       ),
@@ -198,41 +242,44 @@ describe('createRecommendationActionHandlers', () => {
     await expect(handlers.accept()).resolves.toEqual({ status: 'busy' })
     expect(api.acceptRecommendation).toHaveBeenCalledTimes(1)
 
-    resolveAccept?.({})
+    resolveAccept?.(acceptResultFixture)
     await expect(first).resolves.toEqual({ status: 'success' })
   })
 
   it('does not refetch a stale Business after switch', async () => {
-    let resolveAccept: ((value: unknown) => void) | undefined
+    let resolveAccept: ((value: AcceptRecommendationResult) => void) | undefined
     const api = createApi({
       acceptRecommendation: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<AcceptRecommendationResult>((resolve) => {
             resolveAccept = resolve
           }),
       ),
     })
-    const { handlers, onSuccess, setBusinessId } = createHandlers({ api })
+    const { handlers, onAccepted, onSuccess, setBusinessId } = createHandlers({ api })
 
     const pending = handlers.accept()
     setBusinessId('biz_2')
-    resolveAccept?.({})
+    resolveAccept?.(acceptResultFixture)
 
     await expect(pending).resolves.toEqual({ status: 'ignored' })
+    expect(onAccepted).not.toHaveBeenCalled()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
   it('ignores a late A1 success after A → B → A', async () => {
-    let resolveA1: ((value: unknown) => void) | undefined
+    let resolveA1: ((value: AcceptRecommendationResult) => void) | undefined
     const acceptRecommendation = vi.fn()
     acceptRecommendation.mockImplementationOnce(
       () =>
-        new Promise((resolve) => {
+        new Promise<AcceptRecommendationResult>((resolve) => {
           resolveA1 = resolve
         }),
     )
-    acceptRecommendation.mockImplementationOnce(() => new Promise(() => {}))
-    const { handlers, onSuccess, setBusinessId } = createHandlers({
+    acceptRecommendation.mockImplementationOnce(
+      () => new Promise<AcceptRecommendationResult>(() => {}),
+    )
+    const { handlers, onAccepted, onSuccess, setBusinessId } = createHandlers({
       businessId: 'biz_A',
       api: createApi({ acceptRecommendation }),
     })
@@ -243,9 +290,10 @@ describe('createRecommendationActionHandlers', () => {
     setBusinessId('biz_A')
     void handlers.accept()
 
-    resolveA1?.({})
+    resolveA1?.(acceptResultFixture)
 
     await expect(a1).resolves.toEqual({ status: 'ignored' })
+    expect(onAccepted).not.toHaveBeenCalled()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
@@ -254,12 +302,14 @@ describe('createRecommendationActionHandlers', () => {
     const acceptRecommendation = vi.fn()
     acceptRecommendation.mockImplementationOnce(
       () =>
-        new Promise((_resolve, reject) => {
+        new Promise<AcceptRecommendationResult>((_resolve, reject) => {
           rejectA1 = reject
         }),
     )
-    acceptRecommendation.mockImplementationOnce(() => new Promise(() => {}))
-    const { handlers, onSuccess, setBusinessId } = createHandlers({
+    acceptRecommendation.mockImplementationOnce(
+      () => new Promise<AcceptRecommendationResult>(() => {}),
+    )
+    const { handlers, onAccepted, onSuccess, setBusinessId } = createHandlers({
       businessId: 'biz_A',
       api: createApi({ acceptRecommendation }),
     })
@@ -275,26 +325,27 @@ describe('createRecommendationActionHandlers', () => {
     )
 
     await expect(a1).resolves.toEqual({ status: 'ignored' })
+    expect(onAccepted).not.toHaveBeenCalled()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
   it('releases the in-flight lock after abort so the next Business can act', async () => {
-    let resolveA: ((value: unknown) => void) | undefined
-    let resolveB: ((value: unknown) => void) | undefined
+    let resolveA: ((value: AcceptRecommendationResult) => void) | undefined
+    let resolveB: ((value: AcceptRecommendationResult) => void) | undefined
     const acceptRecommendation = vi.fn()
     acceptRecommendation.mockImplementationOnce(
       () =>
-        new Promise((resolve) => {
+        new Promise<AcceptRecommendationResult>((resolve) => {
           resolveA = resolve
         }),
     )
     acceptRecommendation.mockImplementationOnce(
       () =>
-        new Promise((resolve) => {
+        new Promise<AcceptRecommendationResult>((resolve) => {
           resolveB = resolve
         }),
     )
-    acceptRecommendation.mockResolvedValue({})
+    acceptRecommendation.mockResolvedValue(acceptResultFixture)
     const { handlers, setBusinessId } = createHandlers({ api: createApi({ acceptRecommendation }) })
 
     const pendingA = handlers.accept()
@@ -302,12 +353,12 @@ describe('createRecommendationActionHandlers', () => {
     setBusinessId('biz_2')
 
     const pendingB = handlers.accept()
-    resolveA?.({})
+    resolveA?.(acceptResultFixture)
     await expect(pendingA).resolves.toEqual({ status: 'ignored' })
     await expect(handlers.accept()).resolves.toEqual({ status: 'busy' })
     expect(acceptRecommendation).toHaveBeenCalledTimes(2)
 
-    resolveB?.({})
+    resolveB?.(acceptResultFixture)
     await expect(pendingB).resolves.toEqual({ status: 'success' })
     await expect(handlers.accept()).resolves.toEqual({ status: 'success' })
     expect(acceptRecommendation).toHaveBeenCalledTimes(3)

@@ -4,7 +4,10 @@ import type { NeedsDecisionRecommendation } from '@/domain/recommendations/needs
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { AcceptedDecision } from '@/domain/decisions/decision'
+import { PostAcceptPanel } from '@/features/today/PostAcceptPanel'
 import { RecommendationActionBar } from '@/features/today/RecommendationActionBar'
+import type { PostAcceptContinuation } from '@/features/today/usePostAcceptContinuation'
 import {
   getKnowledgeDisplayDate,
   getKnowledgeSourceLabel,
@@ -41,12 +44,22 @@ const VERIFICATION_BADGE_VARIANT = {
 
 interface NeedsDecisionCardProps {
   recommendation: NeedsDecisionRecommendation
+  continuation?: PostAcceptContinuation | null
+  onAccepted: (input: {
+    businessId: string
+    recommendationId: string
+    decision: AcceptedDecision
+  }) => void
   onActionSuccess: () => void
+  onCloseContinuation?: (identity: number) => void
 }
 
 export function NeedsDecisionCard({
   recommendation,
+  continuation,
+  onAccepted,
   onActionSuccess,
+  onCloseContinuation,
 }: NeedsDecisionCardProps) {
   const whyId = useId()
   const [isWhyOpen, setIsWhyOpen] = useState(false)
@@ -114,10 +127,20 @@ export function NeedsDecisionCard({
         </CardContent>
       ) : null}
       <CardContent className={canExplain ? 'pt-0' : undefined}>
-        <RecommendationActionBar
-          recommendationId={recommendation.id}
-          onSuccess={onActionSuccess}
-        />
+        {continuation ? (
+          <PostAcceptPanel
+            key={continuation.identity}
+            decision={continuation.decision}
+            continuationIdentity={continuation.identity}
+            onClosed={(identity) => onCloseContinuation?.(identity)}
+          />
+        ) : (
+          <RecommendationActionBar
+            recommendationId={recommendation.id}
+            onAccepted={onAccepted}
+            onSuccess={onActionSuccess}
+          />
+        )}
       </CardContent>
     </Card>
   )

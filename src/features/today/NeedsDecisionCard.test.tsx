@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { acceptResultFixture } from '@/domain/decisions/decision.fixture'
 import type { NeedsDecisionRecommendation } from '@/domain/recommendations/needsDecision'
 import { BackendApiError } from '@/services/api/apiClient'
 import { ru } from '@/i18n/ru'
@@ -49,14 +50,20 @@ const recommendation: NeedsDecisionRecommendation = {
   ],
 }
 
-function renderCard(onActionSuccess = vi.fn()) {
+function renderCard(
+  onActionSuccess = vi.fn(),
+  onAccepted = vi.fn(),
+  continuation: Parameters<typeof NeedsDecisionCard>[0]['continuation'] = null,
+) {
   render(
     <NeedsDecisionCard
       recommendation={recommendation}
+      continuation={continuation}
+      onAccepted={onAccepted}
       onActionSuccess={onActionSuccess}
     />,
   )
-  return onActionSuccess
+  return { onActionSuccess, onAccepted }
 }
 
 describe('NeedsDecisionCard', () => {
@@ -113,7 +120,9 @@ describe('NeedsDecisionCard', () => {
   })
 
   it('disables action controls while a request is in flight', async () => {
-    vi.mocked(acceptRecommendation).mockImplementation(() => new Promise(() => {}))
+    vi.mocked(acceptRecommendation).mockImplementation(
+      () => new Promise(() => undefined),
+    )
     renderCard()
 
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.accept }))
@@ -142,7 +151,7 @@ describe('NeedsDecisionCard', () => {
     vi.mocked(acceptRecommendation).mockRejectedValue(
       new BackendApiError(409, 'RECOMMENDATION_STATUS_CONFLICT', 'raw', {}),
     )
-    const onActionSuccess = renderCard()
+    const { onActionSuccess, onAccepted } = renderCard()
 
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.accept }))
 
@@ -154,6 +163,7 @@ describe('NeedsDecisionCard', () => {
     expect(screen.getByText('Назначить звонок')).toBeTruthy()
     expect(screen.getByText('Acme Studio')).toBeTruthy()
     expect(onActionSuccess).not.toHaveBeenCalled()
+    expect(onAccepted).not.toHaveBeenCalled()
   })
 
   it('clears a stale action error on cancel and panel switch', async () => {
@@ -179,15 +189,40 @@ describe('NeedsDecisionCard', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
-  it('calls refetch on success and keeps the card until list state changes', async () => {
-    vi.mocked(acceptRecommendation).mockResolvedValue({})
-    const onActionSuccess = renderCard()
+  it('keeps Accept Decision without refetching the list', async () => {
+    vi.mocked(acceptRecommendation).mockResolvedValue(acceptResultFixture)
+    const { onActionSuccess, onAccepted } = renderCard()
 
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.accept }))
 
     await waitFor(() => {
-      expect(onActionSuccess).toHaveBeenCalledTimes(1)
+      expect(onAccepted).toHaveBeenCalledWith({
+        businessId: 'biz_1',
+        recommendationId: 'rec_1',
+        decision: acceptResultFixture.decision,
+      })
     })
+    expect(onActionSuccess).not.toHaveBeenCalled()
     expect(screen.getByText('Назначить звонок')).toBeTruthy()
+  })
+
+  it('renders Post-Accept from Decision.title and hides the old four actions', () => {
+    renderCard(vi.fn(), vi.fn(), {
+      identity: 1,
+      recommendationId: 'rec_1',
+      businessId: 'biz_1',
+      decision: acceptResultFixture.decision,
+      recommendation,
+    })
+
+    expect(screen.getByText(ru.today.accepted)).toBeTruthy()
+    expect(screen.getByText(acceptResultFixture.decision.title)).toBeTruthy()
+    expect(screen.getByRole('button', { name: ru.today.actions.createTask })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: ru.today.actions.accept })).toBeNull()
+    expect(screen.queryByRole('button', { name: ru.today.actions.snooze })).toBeNull()
+    expect(screen.queryByRole('button', { name: ru.today.actions.modify })).toBeNull()
+    expect(screen.queryByRole('button', { name: ru.today.actions.reject })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Подготовить с AI' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Сделаю самостоятельно' })).toBeNull()
   })
 })

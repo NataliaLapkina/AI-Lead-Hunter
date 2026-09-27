@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { acceptResultFixture } from '@/domain/decisions/decision.fixture'
 import type { NeedsDecisionRecommendation } from '@/domain/recommendations/needsDecision'
 import { ru } from '@/i18n/ru'
 import { NeedsDecisionSection } from './NeedsDecisionSection'
@@ -49,7 +50,12 @@ vi.mock('@/services/api/recommendationActions', () => ({
   rejectRecommendation: vi.fn(),
 }))
 
-import { acceptRecommendation } from '@/services/api/recommendationActions'
+import {
+  acceptRecommendation,
+  modifyRecommendation,
+  rejectRecommendation,
+  snoozeRecommendation,
+} from '@/services/api/recommendationActions'
 
 describe('NeedsDecisionSection action refetch wiring', () => {
   afterEach(() => {
@@ -63,24 +69,23 @@ describe('NeedsDecisionSection action refetch wiring', () => {
     }
   })
 
-  it('keeps the card after success until the needs-decision list state updates', async () => {
+  it('keeps Post-Accept after Accept even if the list no longer contains the recommendation', async () => {
     listState.current = {
       data: { recommendations: [recommendation] },
       isLoading: false,
       error: null,
       refetch: vi.fn(),
     }
-    vi.mocked(acceptRecommendation).mockResolvedValue({})
+    vi.mocked(acceptRecommendation).mockResolvedValue(acceptResultFixture)
 
     const { rerender } = render(<NeedsDecisionSection />)
-    expect(screen.getByText('Назначить звонок')).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.accept }))
 
     await waitFor(() => {
-      expect(listState.current.refetch).toHaveBeenCalledTimes(1)
+      expect(screen.getByText(ru.today.accepted)).toBeTruthy()
     })
-    expect(screen.getByText('Назначить звонок')).toBeTruthy()
+    expect(screen.getByText(acceptResultFixture.decision.title)).toBeTruthy()
+    expect(listState.current.refetch).not.toHaveBeenCalled()
 
     listState.current = {
       data: { recommendations: [] },
@@ -90,7 +95,56 @@ describe('NeedsDecisionSection action refetch wiring', () => {
     }
     rerender(<NeedsDecisionSection />)
 
-    expect(screen.queryByText('Назначить звонок')).toBeNull()
-    expect(screen.getByText(ru.today.emptyNeedsDecision)).toBeTruthy()
+    expect(screen.getByText(ru.today.accepted)).toBeTruthy()
+    expect(screen.getByText(acceptResultFixture.decision.title)).toBeTruthy()
+    expect(screen.queryByText(ru.today.emptyNeedsDecision)).toBeNull()
+  })
+
+  it('still refetches after Snooze, Modify and Reject', async () => {
+    listState.current = {
+      data: { recommendations: [recommendation] },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+    vi.mocked(snoozeRecommendation).mockResolvedValue({})
+    vi.mocked(modifyRecommendation).mockResolvedValue({})
+    vi.mocked(rejectRecommendation).mockResolvedValue({})
+
+    const { unmount } = render(<NeedsDecisionSection />)
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.snooze }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.tomorrow }))
+    await waitFor(() => {
+      expect(listState.current.refetch).toHaveBeenCalledTimes(1)
+    })
+    unmount()
+
+    listState.current.refetch = vi.fn()
+    render(<NeedsDecisionSection />)
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.modify }))
+    fireEvent.change(screen.getByLabelText(ru.today.actions.decisionTitle), {
+      target: { value: 'Позвонить' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.continue }))
+    await waitFor(() => {
+      expect(listState.current.refetch).toHaveBeenCalledTimes(1)
+    })
+    cleanup()
+
+    listState.current = {
+      data: { recommendations: [recommendation] },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+    render(<NeedsDecisionSection />)
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.reject }))
+    const rejectButtons = screen.getAllByRole('button', {
+      name: ru.today.actions.reject,
+    })
+    fireEvent.click(rejectButtons[rejectButtons.length - 1] as HTMLElement)
+    await waitFor(() => {
+      expect(listState.current.refetch).toHaveBeenCalledTimes(1)
+    })
   })
 })

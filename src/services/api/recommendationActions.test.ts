@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { acceptResultFixture } from '@/domain/decisions/decision.fixture'
+import { InvalidAcceptResponseError } from '@/domain/decisions/decision'
 import {
   acceptRecommendation,
   modifyRecommendation,
@@ -20,17 +22,19 @@ describe('recommendation action API', () => {
     vi.restoreAllMocks()
   })
 
-  it('accepts with decidedById', async () => {
+  it('accepts with decidedById and parses Decision', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(200, { data: { recommendation: { id: 'rec_1' } } }),
+      jsonResponse(200, { data: acceptResultFixture }),
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    await acceptRecommendation({
-      businessId: 'biz_1',
-      recommendationId: 'rec_1',
-      decidedById: 'user_1',
-    })
+    await expect(
+      acceptRecommendation({
+        businessId: 'biz_1',
+        recommendationId: 'rec_1',
+        decidedById: 'user_1',
+      }),
+    ).resolves.toEqual(acceptResultFixture)
 
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/v1/businesses/biz_1/recommendations/rec_1/accept',
@@ -39,6 +43,21 @@ describe('recommendation action API', () => {
         body: JSON.stringify({ decidedById: 'user_1' }),
       }),
     )
+  })
+
+  it('rejects a malformed Accept Decision response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, { data: { recommendation: { id: 'rec_1' } } }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      acceptRecommendation({
+        businessId: 'biz_1',
+        recommendationId: 'rec_1',
+        decidedById: 'user_1',
+      }),
+    ).rejects.toBeInstanceOf(InvalidAcceptResponseError)
   })
 
   it('snoozes with RFC3339 snoozedUntil and no decidedById', async () => {

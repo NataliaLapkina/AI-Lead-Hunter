@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { InvalidAcceptResponseError } from '@/domain/decisions/decision'
 import {
   countCodePoints,
   getRecommendationActionErrorMessage,
@@ -103,6 +104,9 @@ describe('getRecommendationActionErrorMessage', () => {
       ru.today.actionFailed,
     )
     expect(getRecommendationActionErrorMessage(new Error('boom'))).not.toBe('boom')
+    expect(getRecommendationActionErrorMessage(new InvalidAcceptResponseError())).toBe(
+      ru.today.actionErrors.invalidAcceptDecision,
+    )
   })
 
   it('treats AbortError as abort, not as an unknown action failure helper', () => {

@@ -1,3 +1,4 @@
+import { InvalidAcceptResponseError } from '@/domain/decisions/decision'
 import { ru } from '@/i18n/ru'
 
 export const RECOMMENDATION_REJECTION_REASONS = [
@@ -117,6 +118,10 @@ function readErrorCode(error: unknown): string | null {
 }
 
 export function getRecommendationActionErrorMessage(error: unknown): string {
+  if (error instanceof InvalidAcceptResponseError) {
+    return ru.today.actionErrors.invalidAcceptDecision
+  }
+
   const code = readErrorCode(error)
   if (code && code in ACTION_ERROR_CODES) {
     return ACTION_ERROR_CODES[code as keyof typeof ACTION_ERROR_CODES]
