@@ -7,6 +7,7 @@ import {
 } from '@/features/today/usePostAcceptContinuation'
 import {
   useCreateTaskFromDecision,
+  type CreateTaskAttempt,
   type CreateTaskDueOption,
 } from '@/features/today/useCreateTaskFromDecision'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,7 @@ export function PostAcceptPanel({
   continuationIdentity: number
   onClosed: (identity: number) => void
 }) {
-  const [phase, setPhase] = useState<'choose' | 'form' | 'created'>('choose')
+  const [phase, setPhase] = useState<'choose' | 'form' | 'remind' | 'created'>('choose')
   const [title, setTitle] = useState(decision.title)
   const [dueOption, setDueOption] = useState<CreateTaskDueOption | null>(null)
   const [customDate, setCustomDate] = useState('')
@@ -59,6 +60,28 @@ export function PostAcceptPanel({
     }
   }, [createdTask, onClosed])
 
+  function handleTaskResult(result: CreateTaskAttempt): void {
+    if (result.status === 'success') {
+      setCreatedTask(result.task)
+      setPhase('created')
+    }
+  }
+
+  function resetBranchDueState(): void {
+    setDueOption(null)
+    setCustomDate('')
+    clearActionError()
+  }
+
+  function submitReminder(option: CreateTaskDueOption, date = customDate): void {
+    void submit({
+      title: decision.title,
+      dueOption: option,
+      customDate: date,
+      priority: 'MEDIUM',
+    }).then(handleTaskResult)
+  }
+
   if (phase === 'created' && createdTask) {
     return (
       <div className="space-y-2">
@@ -79,16 +102,150 @@ export function PostAcceptPanel({
         <p className="text-sm font-medium">{ru.today.accepted}</p>
         <p className="text-sm">{decision.title}</p>
         <p className="text-sm text-muted-foreground">{ru.today.whatNext}</p>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setPhase('form')
-            setTitle(decision.title)
-          }}
-        >
-          {ru.today.actions.createTask}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              resetBranchDueState()
+              setTitle(decision.title)
+              setPriority('MEDIUM')
+              setPhase('form')
+            }}
+          >
+            {ru.today.actions.createTask}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              resetBranchDueState()
+              setPhase('remind')
+            }}
+          >
+            {ru.today.actions.doItMyself}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'remind') {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-medium">{ru.today.doItMyself}</p>
+        <p className="text-sm text-muted-foreground">{ru.today.remindAboutThis}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={dueOption === 'today' ? 'default' : 'secondary'}
+            disabled={submitting || !todayAvailable}
+            onClick={() => {
+              setDueOption('today')
+              submitReminder('today')
+            }}
+          >
+            {ru.today.actions.dueToday}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={dueOption === 'tomorrow' ? 'default' : 'secondary'}
+            disabled={submitting}
+            onClick={() => {
+              setDueOption('tomorrow')
+              submitReminder('tomorrow')
+            }}
+          >
+            {ru.today.actions.dueTomorrow}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={dueOption === 'custom' ? 'default' : 'secondary'}
+            disabled={submitting}
+            onClick={() => setDueOption('custom')}
+          >
+            {ru.today.actions.duePickDate}
+          </Button>
+        </div>
+        {!todayAvailable ? (
+          <p className="text-xs text-muted-foreground">{ru.today.todayUnavailable}</p>
+        ) : null}
+        {dueOption === 'custom' ? (
+          <label htmlFor={customDateId} className="block space-y-1 text-sm">
+            <span className="text-muted-foreground">{ru.today.actions.duePickDate}</span>
+            <Input
+              id={customDateId}
+              type="date"
+              value={customDate}
+              min={getTaskDateInputMin()}
+              disabled={submitting}
+              onChange={(event) => {
+                const nextDate = event.target.value
+                setCustomDate(nextDate)
+                submitReminder('custom', nextDate)
+              }}
+            />
+          </label>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={submitting}
+            onClick={() => {
+              if (submitting) {
+                return
+              }
+
+              onClosed(continuationIdentity)
+            }}
+          >
+            {ru.today.actions.noReminder}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={submitting}
+            onClick={() => {
+              if (submitting) {
+                return
+              }
+
+              resetBranchDueState()
+              setPhase('choose')
+            }}
+          >
+            {ru.common.back}
+          </Button>
+        </div>
+        {actionError ? (
+          <div className="space-y-2">
+            <p className="text-sm text-destructive" role="alert">
+              {actionError}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => {
+                if (!dueOption) {
+                  return
+                }
+
+                submitReminder(dueOption)
+              }}
+            >
+              {ru.today.retry}
+            </Button>
+          </div>
+        ) : null}
       </div>
     )
   }
