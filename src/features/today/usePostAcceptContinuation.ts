@@ -71,5 +71,3 @@ export function usePostAcceptContinuations(businessId: string | null) {
     remove,
   }
 }
-
-export const POST_ACCEPT_CONFIRMATION_MS = 1500

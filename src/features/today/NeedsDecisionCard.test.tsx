@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { acceptResultFixture } from '@/domain/decisions/decision.fixture'
 import type { NeedsDecisionRecommendation } from '@/domain/recommendations/needsDecision'
+import { createdTaskFixture } from '@/domain/tasks/task.fixture'
 import { BackendApiError } from '@/services/api/apiClient'
 import { ru } from '@/i18n/ru'
 import { NeedsDecisionCard } from './NeedsDecisionCard'
@@ -23,7 +24,12 @@ vi.mock('@/services/api/recommendationActions', () => ({
   rejectRecommendation: vi.fn(),
 }))
 
+vi.mock('@/services/api/createTaskFromDecision', () => ({
+  createTaskFromDecision: vi.fn(),
+}))
+
 import { acceptRecommendation } from '@/services/api/recommendationActions'
+import { createTaskFromDecision } from '@/services/api/createTaskFromDecision'
 
 const recommendation: NeedsDecisionRecommendation = {
   id: 'rec_1',
@@ -224,5 +230,27 @@ describe('NeedsDecisionCard', () => {
     expect(screen.queryByRole('button', { name: ru.today.actions.modify })).toBeNull()
     expect(screen.queryByRole('button', { name: ru.today.actions.reject })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Подготовить с AI' })).toBeNull()
+  })
+
+  it('notifies the list to refetch after a Post-Accept Task is created', async () => {
+    vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
+    const { onActionSuccess } = renderCard(vi.fn(), vi.fn(), {
+      identity: 1,
+      recommendationId: 'rec_1',
+      businessId: 'biz_1',
+      decision: acceptResultFixture.decision,
+      recommendation,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.createTask }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.dueTomorrow }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.createTask }))
+
+    await waitFor(() => {
+      expect(onActionSuccess).toHaveBeenCalledTimes(1)
+    })
+    expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
+    expect(screen.getByRole('button', { name: ru.today.actions.done })).toBeTruthy()
+    expect(createTaskFromDecision).toHaveBeenCalledTimes(1)
   })
 })

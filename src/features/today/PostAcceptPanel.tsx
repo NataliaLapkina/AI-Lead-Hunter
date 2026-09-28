@@ -3,9 +3,6 @@ import type { AcceptedDecision } from '@/domain/decisions/decision'
 import type { CreatedTask, TaskPriority } from '@/domain/tasks/task'
 import { getTaskDateInputMin, isTodayDueAtAvailable } from '@/domain/tasks/taskDueAt'
 import {
-  POST_ACCEPT_CONFIRMATION_MS,
-} from '@/features/today/usePostAcceptContinuation'
-import {
   useCreateTaskFromDecision,
   type CreateTaskAttempt,
   type CreateTaskDueOption,
@@ -26,10 +23,12 @@ export function PostAcceptPanel({
   decision,
   continuationIdentity,
   onClosed,
+  onTaskCreated,
 }: {
   decision: AcceptedDecision
   continuationIdentity: number
   onClosed: (identity: number) => void
+  onTaskCreated?: () => void
 }) {
   const [phase, setPhase] = useState<'choose' | 'form' | 'remind' | 'created'>('choose')
   const [title, setTitle] = useState(decision.title)
@@ -37,34 +36,35 @@ export function PostAcceptPanel({
   const [customDate, setCustomDate] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM')
   const [createdTask, setCreatedTask] = useState<CreatedTask | null>(null)
+  const [createdFrom, setCreatedFrom] = useState<'task' | 'reminder' | null>(null)
   const { submitting, actionError, submit, clearActionError } =
     useCreateTaskFromDecision(decision.id, continuationIdentity)
   const titleId = useId()
   const customDateId = useId()
   const todayAvailable = isTodayDueAtAvailable()
-  const continuationIdentityRef = useRef(continuationIdentity)
-  continuationIdentityRef.current = continuationIdentity
+  const onTaskCreatedRef = useRef(onTaskCreated)
+  const mountedRef = useRef(true)
+  onTaskCreatedRef.current = onTaskCreated
 
   useEffect(() => {
-    if (!createdTask) {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  function handleTaskResult(
+    result: CreateTaskAttempt,
+    source: 'task' | 'reminder',
+  ): void {
+    if (result.status !== 'success' || !mountedRef.current) {
       return
     }
 
-    const capturedIdentity = continuationIdentityRef.current
-    const timeoutId = window.setTimeout(() => {
-      onClosed(capturedIdentity)
-    }, POST_ACCEPT_CONFIRMATION_MS)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [createdTask, onClosed])
-
-  function handleTaskResult(result: CreateTaskAttempt): void {
-    if (result.status === 'success') {
-      setCreatedTask(result.task)
-      setPhase('created')
-    }
+    setCreatedFrom(source)
+    setCreatedTask(result.task)
+    setPhase('created')
+    onTaskCreatedRef.current?.()
   }
 
   function resetBranchDueState(): void {
@@ -79,19 +79,36 @@ export function PostAcceptPanel({
       dueOption: option,
       customDate: date,
       priority: 'MEDIUM',
-    }).then(handleTaskResult)
+    }).then((result) => handleTaskResult(result, 'reminder'))
   }
 
   if (phase === 'created' && createdTask) {
+    const isReminder = createdFrom === 'reminder'
+    const dueAtLabel = createdTask.dueAt ? formatDateTime(createdTask.dueAt) : null
+
     return (
-      <div className="space-y-2">
-        <p className="text-sm font-medium">{ru.today.taskCreated}</p>
-        <p className="text-sm">{createdTask.title}</p>
-        {createdTask.dueAt ? (
+      <div className="space-y-3">
+        <p className="text-sm font-medium">
+          {isReminder ? ru.today.reminderCreated : ru.today.taskCreated}
+        </p>
+        {isReminder && dueAtLabel ? (
           <p className="text-sm text-muted-foreground">
-            {formatDateTime(createdTask.dueAt)}
+            {`${ru.today.remindAt} ${dueAtLabel}`}
           </p>
         ) : null}
+        <p className="text-sm">{createdTask.title}</p>
+        {!isReminder && dueAtLabel ? (
+          <p className="text-sm text-muted-foreground">{dueAtLabel}</p>
+        ) : null}
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            onClosed(continuationIdentity)
+          }}
+        >
+          {ru.today.actions.done}
+        </Button>
       </div>
     )
   }
@@ -342,12 +359,7 @@ export function PostAcceptPanel({
               dueOption,
               customDate,
               priority,
-            }).then((result) => {
-              if (result.status === 'success') {
-                setCreatedTask(result.task)
-                setPhase('created')
-              }
-            })
+            }).then((result) => handleTaskResult(result, 'task'))
           }}
         >
           {ru.today.actions.createTask}
@@ -385,12 +397,7 @@ export function PostAcceptPanel({
                 dueOption,
                 customDate,
                 priority,
-              }).then((result) => {
-                if (result.status === 'success') {
-                  setCreatedTask(result.task)
-                  setPhase('created')
-                }
-              })
+              }).then((result) => handleTaskResult(result, 'task'))
             }}
           >
             {ru.today.retry}

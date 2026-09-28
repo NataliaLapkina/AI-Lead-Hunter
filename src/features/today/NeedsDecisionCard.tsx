@@ -133,6 +133,7 @@ export function NeedsDecisionCard({
             decision={continuation.decision}
             continuationIdentity={continuation.identity}
             onClosed={(identity) => onCloseContinuation?.(identity)}
+            onTaskCreated={onActionSuccess}
           />
         ) : (
           <RecommendationActionBar

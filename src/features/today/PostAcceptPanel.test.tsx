@@ -15,7 +15,6 @@ import {
   dueAtToday,
   dueAtTomorrow,
 } from '@/domain/tasks/taskDueAt'
-import { POST_ACCEPT_CONFIRMATION_MS } from './usePostAcceptContinuation'
 import { PostAcceptPanel } from './PostAcceptPanel'
 
 const session = vi.hoisted(() => ({
@@ -49,11 +48,13 @@ describe('PostAcceptPanel', () => {
   it('prefills Decision.title, defaults to MEDIUM, and submits the exact body', async () => {
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
     const onClosed = vi.fn()
+    const onTaskCreated = vi.fn()
     render(
       <PostAcceptPanel
         decision={acceptResultFixture.decision}
         continuationIdentity={1}
         onClosed={onClosed}
+        onTaskCreated={onTaskCreated}
       />,
     )
 
@@ -87,15 +88,19 @@ describe('PostAcceptPanel', () => {
     await waitFor(() => {
       expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
     })
+    expect(onTaskCreated).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText(ru.today.reminderCreated)).toBeNull()
     expect(screen.getByText(createdTaskFixture.title)).toBeTruthy()
     expect(
       screen.getByText(formatDateTime(createdTaskFixture.dueAt as string)),
     ).toBeTruthy()
+    expect(onClosed).not.toHaveBeenCalled()
 
-    await waitFor(() => {
-      expect(onClosed).toHaveBeenCalledTimes(1)
-      expect(onClosed).toHaveBeenCalledWith(1)
-    }, { timeout: POST_ACCEPT_CONFIRMATION_MS + 1000 })
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.done }))
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(onClosed).toHaveBeenCalledWith(1)
+    expect(createTaskFromDecision).toHaveBeenCalledTimes(1)
+    expect(onTaskCreated).toHaveBeenCalledTimes(1)
   })
 
   it('does not POST a past custom date and preserves the form on error', async () => {
@@ -161,7 +166,7 @@ describe('PostAcceptPanel', () => {
     expect(createTaskFromDecision).not.toHaveBeenCalled()
   })
 
-  it('does not let a C1 success timer close C2 for the same recommendation', async () => {
+  it('does not let C1 Done close C2 for the same recommendation', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 27, 10, 0, 0, 0))
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
@@ -221,9 +226,10 @@ describe('PostAcceptPanel', () => {
     expect(screen.getByText('Решение C2')).toBeTruthy()
     expect(screen.getByText(ru.today.accepted)).toBeTruthy()
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
+    expect(screen.queryByRole('button', { name: ru.today.actions.done })).toBeNull()
 
     await act(async () => {
-      vi.advanceTimersByTime(POST_ACCEPT_CONFIRMATION_MS)
+      vi.advanceTimersByTime(10_000)
     })
 
     expect(screen.getByText('Решение C2')).toBeTruthy()
@@ -232,7 +238,7 @@ describe('PostAcceptPanel', () => {
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
   })
 
-  it('cleans up the success timer on unmount', async () => {
+  it('does not close on unmount without Готово', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 27, 10, 0, 0, 0))
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
@@ -256,7 +262,7 @@ describe('PostAcceptPanel', () => {
 
     unmount()
     await act(async () => {
-      vi.advanceTimersByTime(POST_ACCEPT_CONFIRMATION_MS)
+      vi.advanceTimersByTime(10_000)
     })
     expect(onClosed).not.toHaveBeenCalled()
   })
@@ -289,12 +295,14 @@ describe('PostAcceptPanel', () => {
       title: 'Title D2',
     }
 
+    const onTaskCreated = vi.fn()
     const { rerender } = render(
       <PostAcceptPanel
         key={1}
         decision={decisionD1}
         continuationIdentity={1}
         onClosed={vi.fn()}
+        onTaskCreated={onTaskCreated}
       />,
     )
 
@@ -330,6 +338,7 @@ describe('PostAcceptPanel', () => {
     await act(async () => {
       await Promise.resolve()
     })
+    expect(onTaskCreated).not.toHaveBeenCalled()
     expect(screen.queryByText('Task D1')).toBeNull()
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
@@ -442,11 +451,13 @@ describe('PostAcceptPanel', () => {
     vi.useFakeTimers()
     vi.setSystemTime(now)
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
+    const onTaskCreated = vi.fn()
     render(
       <PostAcceptPanel
         decision={acceptResultFixture.decision}
         continuationIdentity={1}
         onClosed={vi.fn()}
+        onTaskCreated={onTaskCreated}
       />,
     )
     openReminder()
@@ -463,7 +474,9 @@ describe('PostAcceptPanel', () => {
       dueAt: dueAtToday(now),
       priority: 'MEDIUM',
     })
-    expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
+    expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
+    expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
+    expect(onTaskCreated).toHaveBeenCalledTimes(1)
   })
 
   it('posts a Tomorrow reminder with local tomorrow 09:00', async () => {
@@ -597,7 +610,7 @@ describe('PostAcceptPanel', () => {
     openReminder()
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.duePickDate }))
     fireEvent.change(screen.getByLabelText(ru.today.actions.duePickDate), {
-      target: { value: '2026-09-28' },
+      target: { value: '2026-12-31' },
     })
 
     await waitFor(() => {
@@ -607,7 +620,7 @@ describe('PostAcceptPanel', () => {
     })
     expect(screen.getByRole('alert').textContent).not.toContain('DECISION_STATUS_CONFLICT')
     expect((screen.getByLabelText(ru.today.actions.duePickDate) as HTMLInputElement).value).toBe(
-      '2026-09-28',
+      '2026-12-31',
     )
     expect(screen.getByText(ru.today.remindAboutThis)).toBeTruthy()
 
@@ -615,29 +628,100 @@ describe('PostAcceptPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: ru.today.retry }))
     await waitFor(() => {
       expect(createTaskFromDecision).toHaveBeenCalledTimes(2)
-      expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
+      expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
+      expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
     })
   })
 
   it('treats an existing open Task HTTP 200 as reminder success', async () => {
+    const onClosed = vi.fn()
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
     render(
       <PostAcceptPanel
         decision={acceptResultFixture.decision}
         continuationIdentity={1}
-        onClosed={vi.fn()}
+        onClosed={onClosed}
       />,
     )
     openReminder()
     fireEvent.click(screen.getByRole('button', { name: ru.today.actions.dueTomorrow }))
 
     await waitFor(() => {
-      expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
+      expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
     })
-    expect(screen.getByText(createdTaskFixture.title)).toBeTruthy()
+    expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
     expect(
-      screen.getByText(formatDateTime(createdTaskFixture.dueAt as string)),
+      screen.getByText(
+        `${ru.today.remindAt} ${formatDateTime(createdTaskFixture.dueAt as string)}`,
+      ),
     ).toBeTruthy()
+    expect(screen.getByText(createdTaskFixture.title)).toBeTruthy()
+    expect(screen.getByRole('button', { name: ru.today.actions.done })).toBeTruthy()
+    expect(onClosed).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.done }))
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(onClosed).toHaveBeenCalledWith(1)
+    expect(createTaskFromDecision).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not auto-close a mounted Reminder success confirmation after 10 seconds', async () => {
+    const now = new Date(2026, 8, 27, 10, 0, 0, 0)
+    vi.useFakeTimers()
+    vi.setSystemTime(now)
+    vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
+    const onClosed = vi.fn()
+
+    function Host() {
+      const [open, setOpen] = useState(true)
+      if (!open) {
+        return null
+      }
+
+      return (
+        <PostAcceptPanel
+          decision={acceptResultFixture.decision}
+          continuationIdentity={4}
+          onClosed={(identity) => {
+            onClosed(identity)
+            if (identity === 4) {
+              setOpen(false)
+            }
+          }}
+        />
+      )
+    }
+
+    render(<Host />)
+    openReminder()
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.dueTomorrow }))
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    const reminderLine = `${ru.today.remindAt} ${formatDateTime(createdTaskFixture.dueAt as string)}`
+    expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
+    expect(screen.getByText(reminderLine)).toBeTruthy()
+    expect(screen.getByText(createdTaskFixture.title)).toBeTruthy()
+    expect(screen.getByRole('button', { name: ru.today.actions.done })).toBeTruthy()
+    expect(onClosed).not.toHaveBeenCalled()
+
+    await act(async () => {
+      vi.advanceTimersByTime(10_000)
+    })
+
+    expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
+    expect(screen.getByText(reminderLine)).toBeTruthy()
+    expect(screen.getByText(createdTaskFixture.title)).toBeTruthy()
+    expect(screen.getByRole('button', { name: ru.today.actions.done })).toBeTruthy()
+    expect(onClosed).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.done }))
+    expect(onClosed).toHaveBeenCalledTimes(1)
+    expect(onClosed).toHaveBeenCalledWith(4)
+    expect(screen.queryByText(ru.today.reminderCreated)).toBeNull()
+    expect(createTaskFromDecision).toHaveBeenCalledTimes(1)
   })
 
   it('prevents a second reminder submit while the first is in flight', async () => {
@@ -668,6 +752,34 @@ describe('PostAcceptPanel', () => {
       true,
     )
     expect(screen.getByRole('button', { name: ru.today.actions.noReminder })).toHaveProperty(
+      'disabled',
+      true,
+    )
+  })
+
+  it('prevents a second Create Task submit while the first is in flight', async () => {
+    const onTaskCreated = vi.fn()
+    vi.mocked(createTaskFromDecision).mockImplementation(
+      () => new Promise<CreateTaskFromDecisionResult>(() => undefined),
+    )
+    render(
+      <PostAcceptPanel
+        decision={acceptResultFixture.decision}
+        continuationIdentity={1}
+        onClosed={vi.fn()}
+        onTaskCreated={onTaskCreated}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.createTask }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.dueTomorrow }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.createTask }))
+    fireEvent.click(screen.getByRole('button', { name: ru.today.actions.createTask }))
+
+    await waitFor(() => {
+      expect(createTaskFromDecision).toHaveBeenCalledTimes(1)
+    })
+    expect(onTaskCreated).not.toHaveBeenCalled()
+    expect(screen.getAllByRole('button', { name: ru.today.actions.createTask })[0]).toHaveProperty(
       'disabled',
       true,
     )
@@ -790,6 +902,7 @@ describe('PostAcceptPanel', () => {
     expect(screen.getByText(ru.today.whatNext)).toBeTruthy()
     expect(screen.queryByText('Task D1')).toBeNull()
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
+    expect(screen.queryByText(ru.today.reminderCreated)).toBeNull()
   })
 
   it('ignores a stale reminder after Business A → B → A', async () => {
@@ -836,10 +949,11 @@ describe('PostAcceptPanel', () => {
       await Promise.resolve()
     })
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
+    expect(screen.queryByText(ru.today.reminderCreated)).toBeNull()
     expect(screen.getByText(ru.today.remindAboutThis)).toBeTruthy()
   })
 
-  it('does not let a C1 reminder timer close C2', async () => {
+  it('does not let C1 reminder Done close C2', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 27, 10, 0, 0, 0))
     vi.mocked(createTaskFromDecision).mockResolvedValue({ task: createdTaskFixture })
@@ -893,14 +1007,16 @@ describe('PostAcceptPanel', () => {
     await act(async () => {
       await Promise.resolve()
     })
-    expect(screen.getByText(ru.today.taskCreated)).toBeTruthy()
+    expect(screen.getByText(ru.today.reminderCreated)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'replace-continuation' }))
     await act(async () => {
-      vi.advanceTimersByTime(POST_ACCEPT_CONFIRMATION_MS)
+      vi.advanceTimersByTime(10_000)
     })
     expect(screen.getByText('Решение C2')).toBeTruthy()
     expect(screen.getByText(ru.today.whatNext)).toBeTruthy()
+    expect(screen.queryByText(ru.today.reminderCreated)).toBeNull()
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()
+    expect(screen.queryByRole('button', { name: ru.today.actions.done })).toBeNull()
   })
 })
