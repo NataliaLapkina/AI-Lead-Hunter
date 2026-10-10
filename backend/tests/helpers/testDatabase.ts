@@ -11,6 +11,7 @@ export type TestDatabaseEnvironment = {
 export type KnownTestFixtureIds = {
   recommendationIds?: string[]
   decisionIds?: string[]
+  taskIds?: string[]
   knowledgeIds?: string[]
   companyIds?: string[]
   membershipIds?: string[]
@@ -134,6 +135,7 @@ export async function cleanupKnownTestFixtures(
 
   const recommendationIds = fixtureIds.recommendationIds ?? []
   const decisionIds = fixtureIds.decisionIds ?? []
+  const taskIds = fixtureIds.taskIds ?? []
   const knowledgeIds = fixtureIds.knowledgeIds ?? []
   const companyIds = fixtureIds.companyIds ?? []
   const membershipIds = fixtureIds.membershipIds ?? []
@@ -155,9 +157,16 @@ export async function cleanupKnownTestFixtures(
     })
   }
 
-  if (decisionIds.length > 0) {
+  if (taskIds.length > 0 || decisionIds.length > 0) {
     await prisma.task.deleteMany({
-      where: { decisionId: { in: decisionIds } },
+      where: {
+        OR: [
+          ...(taskIds.length > 0 ? [{ id: { in: taskIds } }] : []),
+          ...(decisionIds.length > 0
+            ? [{ decisionId: { in: decisionIds } }]
+            : []),
+        ],
+      },
     })
   }
 

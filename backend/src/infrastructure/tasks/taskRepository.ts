@@ -165,3 +165,85 @@ export async function runCreateTaskFromDecisionTransaction<T>(
     return operation(createTransactionRepository(tx))
   })
 }
+
+export type OpenTaskDueRecord = {
+  id: string
+  title: string
+  status: TaskStatus
+  dueAt: Date
+  priority: TaskPriority
+  company: {
+    id: string
+    name: string
+  } | null
+  decision: {
+    id: string
+    title: string
+    status: DecisionStatus
+  } | null
+}
+
+export async function findOpenTasksDueBefore(
+  businessId: string,
+  startOfTomorrow: Date,
+): Promise<OpenTaskDueRecord[]> {
+  const tasks = await prisma.task.findMany({
+    where: {
+      businessId,
+      status: {
+        in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS],
+      },
+      dueAt: {
+        not: null,
+        lt: startOfTomorrow,
+      },
+      AND: [
+        {
+          OR: [{ companyId: null }, { company: { businessId } }],
+        },
+        {
+          OR: [{ decisionId: null }, { decision: { businessId } }],
+        },
+      ],
+    },
+    orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      dueAt: true,
+      priority: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      decision: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
+    },
+  })
+
+  return tasks.flatMap((task) => {
+    if (task.dueAt === null) {
+      return []
+    }
+
+    return [
+      {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        dueAt: task.dueAt,
+        priority: task.priority,
+        company: task.company,
+        decision: task.decision,
+      },
+    ]
+  })
+}
