@@ -183,6 +183,48 @@ export type OpenTaskDueRecord = {
   } | null
 }
 
+export type StartedTaskRow = {
+  id: string
+  status: TaskStatus
+}
+
+export async function tryStartTaskAtomic(
+  businessId: string,
+  taskId: string,
+): Promise<StartedTaskRow | null> {
+  // Prisma updateMany cannot RETURNING; use parameterized UPDATE ... RETURNING.
+  // updatedAt is set explicitly: raw SQL bypasses Prisma @updatedAt.
+  const rows = await prisma.$queryRaw<StartedTaskRow[]>`
+    UPDATE "Task"
+    SET
+      status = CAST(${TaskStatus.IN_PROGRESS} AS "TaskStatus"),
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE
+      id = ${taskId}
+      AND "businessId" = ${businessId}
+      AND status = CAST(${TaskStatus.TODO} AS "TaskStatus")
+    RETURNING id, status
+  `
+
+  return rows[0] ?? null
+}
+
+export async function findTaskStartContextInBusiness(
+  businessId: string,
+  taskId: string,
+) {
+  return prisma.task.findFirst({
+    where: {
+      id: taskId,
+      businessId,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  })
+}
+
 export async function findOpenTasksDueBefore(
   businessId: string,
   startOfTomorrow: Date,

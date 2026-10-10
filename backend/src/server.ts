@@ -10,6 +10,7 @@ import { registerRejectRecommendationRoute } from './api/recommendations/rejectR
 import { registerSnoozeRecommendationRoute } from './api/recommendations/snoozeRecommendationRoute.js'
 import { registerCreateTaskFromDecisionRoute } from './api/tasks/createTaskFromDecisionRoute.js'
 import { registerListTodayTasksRoute } from './api/tasks/listTodayTasksRoute.js'
+import { registerStartTaskRoute } from './api/tasks/startTaskRoute.js'
 import { registerListSearchResultsRoute } from './api/searches/listSearchResultsRoute.js'
 import { registerGetSearchResultDetailRoute } from './api/searches/getSearchResultDetailRoute.js'
 import {
@@ -69,6 +70,7 @@ async function buildServer() {
   await registerSnoozeRecommendationRoute(app, API_PREFIX)
   await registerCreateTaskFromDecisionRoute(app, API_PREFIX)
   await registerListTodayTasksRoute(app, API_PREFIX)
+  await registerStartTaskRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({
