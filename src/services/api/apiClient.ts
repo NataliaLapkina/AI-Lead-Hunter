@@ -108,15 +108,19 @@ export async function apiGet<T>(
 
 export async function apiPost<T>(
   path: string,
-  body: unknown,
+  body?: unknown,
   options?: { signal?: AbortSignal },
 ): Promise<T> {
   return apiRequest<T>(path, {
     method: 'POST',
     signal: options?.signal,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    ...(body === undefined
+      ? {}
+      : {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        }),
   })
 }

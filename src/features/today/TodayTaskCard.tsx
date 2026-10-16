@@ -11,7 +11,19 @@ const PRIORITY_BADGE_VARIANT = {
   HIGH: 'warning',
 } as const
 
-export function TodayTaskCard({ task }: { task: TodayTask }) {
+export function TodayTaskCard({
+  task,
+  starting = false,
+  startError = null,
+  onStart,
+}: {
+  task: TodayTask
+  starting?: boolean
+  startError?: string | null
+  onStart?: () => void
+}) {
+  const canStart = task.status === 'TODO' && !starting
+
   return (
     <Card className={task.isOverdue ? 'border-destructive/40' : undefined}>
       <CardHeader className="gap-3 space-y-0">
@@ -41,9 +53,21 @@ export function TodayTaskCard({ task }: { task: TodayTask }) {
           </p>
         ) : null}
         <p className="text-sm text-muted-foreground">{ru.today.taskActions.unavailable}</p>
+        {startError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {startError}
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" disabled>
-            {ru.today.taskActions.start}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!canStart}
+            aria-busy={starting}
+            onClick={canStart ? onStart : undefined}
+          >
+            {starting ? ru.today.taskActions.starting : ru.today.taskActions.start}
           </Button>
           <Button type="button" variant="outline" size="sm" disabled>
             {ru.today.taskActions.reschedule}

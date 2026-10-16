@@ -449,9 +449,12 @@ export const ru = {
     },
     taskActions: {
       start: 'Начать',
+      starting: 'Начинаем…',
       reschedule: 'Перенести',
       complete: 'Готово',
-      unavailable: 'Действия будут доступны на следующем этапе.',
+      unavailable: 'Перенос и завершение будут доступны на следующем этапе.',
+      statusConflict: 'Эту задачу уже нельзя начать.',
+      notFound: 'Задача не найдена.',
     },
     whyAiDecided: 'Почему AI так решил?',
     aiRationale: 'Обоснование AI',

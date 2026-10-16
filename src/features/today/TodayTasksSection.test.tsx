@@ -161,11 +161,10 @@ describe('TodayTasksSection', () => {
 
     render(<TodayTasksSection />)
 
-    for (const name of [
-      ru.today.taskActions.start,
-      ru.today.taskActions.reschedule,
-      ru.today.taskActions.complete,
-    ]) {
+    const startButton = screen.getByRole('button', { name: ru.today.taskActions.start }) as HTMLButtonElement
+    expect(startButton.disabled).toBe(false)
+
+    for (const name of [ru.today.taskActions.reschedule, ru.today.taskActions.complete]) {
       const button = screen.getByRole('button', { name }) as HTMLButtonElement
       expect(button.disabled).toBe(true)
       fireEvent.click(button)

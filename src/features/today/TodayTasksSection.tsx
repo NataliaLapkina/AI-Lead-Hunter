@@ -5,12 +5,14 @@ import { MissingTimeZoneError } from '@/domain/tasks/browserTimeZone'
 import type { TodayTask } from '@/domain/tasks/todayTask'
 import { useCurrentBusiness } from '@/features/business/CurrentBusinessContext'
 import { TodayTaskCard } from '@/features/today/TodayTaskCard'
+import { useStartTodayTask } from '@/features/today/useStartTodayTask'
 import { useTodayTasks } from '@/features/today/useTodayTasks'
 import { ru } from '@/i18n/ru'
 
 export function TodayTasksSection() {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useTodayTasks()
+  const start = useStartTodayTask(businessId, refetch)
   const tasks = data?.tasks ?? []
 
   return (
@@ -24,6 +26,9 @@ export function TodayTasksSection() {
         isLoading={isLoading}
         error={error}
         onRetry={refetch}
+        isStarting={start.isPending}
+        startErrorFor={start.errorFor}
+        onStart={start.start}
       />
     </section>
   )
@@ -35,12 +40,18 @@ function TodayTasksSectionBody({
   isLoading,
   error,
   onRetry,
+  isStarting,
+  startErrorFor,
+  onStart,
 }: {
   businessId: string | null
   tasks: TodayTask[]
   isLoading: boolean
   error: Error | null
   onRetry: () => void
+  isStarting: (taskId: string) => boolean
+  startErrorFor: (taskId: string) => string | null
+  onStart: (taskId: string) => void
 }) {
   if (businessId === null) {
     return <p className="text-sm text-muted-foreground">{ru.today.missingBusiness}</p>
@@ -82,7 +93,15 @@ function TodayTasksSectionBody({
   return (
     <div className="space-y-4">
       {tasks.map((task) => (
-        <TodayTaskCard key={task.id} task={task} />
+        <TodayTaskCard
+          key={task.id}
+          task={task}
+          starting={isStarting(task.id)}
+          startError={startErrorFor(task.id)}
+          onStart={() => {
+            onStart(task.id)
+          }}
+        />
       ))}
     </div>
   )
