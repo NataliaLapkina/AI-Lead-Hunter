@@ -225,6 +225,53 @@ export async function findTaskStartContextInBusiness(
   })
 }
 
+export type RescheduledTaskRow = {
+  id: string
+  status: TaskStatus
+  dueAt: Date
+}
+
+export async function tryRescheduleTaskAtomic(
+  businessId: string,
+  taskId: string,
+  dueAt: Date,
+): Promise<RescheduledTaskRow | null> {
+  // Prisma updateMany cannot RETURNING; use parameterized UPDATE ... RETURNING.
+  // updatedAt is set explicitly: raw SQL bypasses Prisma @updatedAt.
+  const rows = await prisma.$queryRaw<RescheduledTaskRow[]>`
+    UPDATE "Task"
+    SET
+      "dueAt" = ${dueAt},
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE
+      id = ${taskId}
+      AND "businessId" = ${businessId}
+      AND status IN (
+        CAST(${TaskStatus.TODO} AS "TaskStatus"),
+        CAST(${TaskStatus.IN_PROGRESS} AS "TaskStatus")
+      )
+    RETURNING id, status, "dueAt"
+  `
+
+  return rows[0] ?? null
+}
+
+export async function findTaskRescheduleContextInBusiness(
+  businessId: string,
+  taskId: string,
+) {
+  return prisma.task.findFirst({
+    where: {
+      id: taskId,
+      businessId,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  })
+}
+
 export async function findOpenTasksDueBefore(
   businessId: string,
   startOfTomorrow: Date,
