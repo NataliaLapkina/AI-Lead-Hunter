@@ -280,3 +280,15 @@ Before implementing:
 5. Run scope-appropriate checks.
 6. Report changes, tests, and risks.
 7. Wait for explicit commit and push instructions.
+
+## 20. Cursor Cloud specific instructions
+
+The Cloud Agent environment installs dependencies for the repository root and `backend/`, generates the Prisma client, and on each boot starts PostgreSQL 16, applies migrations, and runs both dev servers.
+
+- Frontend: `http://localhost:5173/AI-Lead-Hunter/` (the Vite `base` is `/AI-Lead-Hunter/`).
+- API: `http://127.0.0.1:3001`. Health is `GET /api/v1/health`.
+- Development database: `ai_lead_hunter`. Test database: `ai_lead_hunter_test`.
+- `backend/.env` is created on boot when missing. Its `DATABASE_URL` is the development database. Its `TEST_DATABASE_URL` is the test database. Run `npm test`, `npm run typecheck`, `npm run build`, `npm run prisma:validate`, and `npm run db:check` from `backend/`.
+- The root `.env` is also created on boot when missing. `VITE_DEV_BUSINESS_ID` is `dev_business_local` and `VITE_DEV_USER_ID` is `dev_user_local`. Its `DATABASE_URL` and `TEST_DATABASE_URL` both point at `ai_lead_hunter_test`, because root `npm test` also collects `backend/tests` and must not use the development database.
+- `backend/tests/integration/database.smoke.test.ts` reads `TEST_DATABASE_URL` from the process environment and does not load dotenv. Login shells export it from `/etc/profile.d/ai-lead-hunter.sh`. `cd backend && npm test` loads `backend/.env` and is the reliable integration command.
+- The local role `ubuntu` connects to PostgreSQL on `127.0.0.1` without a password. Do not replace these URLs with a hosted database.
