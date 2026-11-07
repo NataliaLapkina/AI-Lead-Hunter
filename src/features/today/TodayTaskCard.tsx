@@ -16,13 +16,16 @@ export function TodayTaskCard({
   starting = false,
   startError = null,
   onStart,
+  onReschedule,
 }: {
   task: TodayTask
   starting?: boolean
   startError?: string | null
   onStart?: () => void
+  onReschedule?: (taskId: string) => void
 }) {
   const canStart = task.status === 'TODO' && !starting
+  const canReschedule = task.status === 'TODO' || task.status === 'IN_PROGRESS'
 
   return (
     <Card className={task.isOverdue ? 'border-destructive/40' : undefined}>
@@ -69,7 +72,19 @@ export function TodayTaskCard({
           >
             {starting ? ru.today.taskActions.starting : ru.today.taskActions.start}
           </Button>
-          <Button type="button" variant="outline" size="sm" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!canReschedule}
+            onClick={
+              canReschedule
+                ? () => {
+                    onReschedule?.(task.id)
+                  }
+                : undefined
+            }
+          >
             {ru.today.taskActions.reschedule}
           </Button>
           <Button type="button" variant="outline" size="sm" disabled>

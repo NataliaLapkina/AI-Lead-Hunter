@@ -154,7 +154,7 @@ describe('TodayTasksSection', () => {
     expect(screen.queryByText(ru.today.tasksLoadError)).toBeNull()
   })
 
-  it('does not write when the planned actions are activated', () => {
+  it('does not write when complete is activated or reschedule is only opened', () => {
     show([task])
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
@@ -164,12 +164,19 @@ describe('TodayTasksSection', () => {
     const startButton = screen.getByRole('button', { name: ru.today.taskActions.start }) as HTMLButtonElement
     expect(startButton.disabled).toBe(false)
 
-    for (const name of [ru.today.taskActions.reschedule, ru.today.taskActions.complete]) {
-      const button = screen.getByRole('button', { name }) as HTMLButtonElement
-      expect(button.disabled).toBe(true)
-      fireEvent.click(button)
-    }
+    const completeButton = screen.getByRole('button', {
+      name: ru.today.taskActions.complete,
+    }) as HTMLButtonElement
+    expect(completeButton.disabled).toBe(true)
+    fireEvent.click(completeButton)
 
+    const rescheduleButton = screen.getByRole('button', {
+      name: ru.today.taskActions.reschedule,
+    }) as HTMLButtonElement
+    expect(rescheduleButton.disabled).toBe(false)
+    fireEvent.click(rescheduleButton)
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
     expect(screen.getByText(ru.today.taskActions.unavailable)).toBeTruthy()
     expect(fetchMock).not.toHaveBeenCalled()
     expect(createTaskFromDecision).not.toHaveBeenCalled()

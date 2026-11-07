@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MissingTimeZoneError } from '@/domain/tasks/browserTimeZone'
 import type { TodayTask } from '@/domain/tasks/todayTask'
 import { useCurrentBusiness } from '@/features/business/CurrentBusinessContext'
+import { RescheduleTaskDialog } from '@/features/today/RescheduleTaskDialog'
 import { TodayTaskCard } from '@/features/today/TodayTaskCard'
+import { useRescheduleTodayTask } from '@/features/today/useRescheduleTodayTask'
 import { useStartTodayTask } from '@/features/today/useStartTodayTask'
 import { useTodayTasks } from '@/features/today/useTodayTasks'
 import { ru } from '@/i18n/ru'
@@ -13,7 +16,27 @@ export function TodayTasksSection() {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useTodayTasks()
   const start = useStartTodayTask(businessId, refetch)
+  const reschedule = useRescheduleTodayTask(businessId, refetch)
   const tasks = data?.tasks ?? []
+  const [rescheduleTask, setRescheduleTask] = useState<TodayTask | null>(null)
+
+  useEffect(() => {
+    setRescheduleTask(null)
+  }, [businessId])
+
+  function openReschedule(taskId: string) {
+    if (reschedule.pending) {
+      return
+    }
+
+    const task = tasks.find((item) => item.id === taskId)
+    if (!task || (task.status !== 'TODO' && task.status !== 'IN_PROGRESS')) {
+      return
+    }
+
+    reschedule.clearError()
+    setRescheduleTask(task)
+  }
 
   return (
     <section className="space-y-4" aria-labelledby="needs-to-do-heading" aria-busy={isLoading}>
@@ -29,6 +52,29 @@ export function TodayTasksSection() {
         isStarting={start.isPending}
         startErrorFor={start.errorFor}
         onStart={start.start}
+        onReschedule={openReschedule}
+      />
+      <RescheduleTaskDialog
+        task={rescheduleTask}
+        pending={reschedule.pending}
+        error={reschedule.error}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen || reschedule.pending) {
+            return
+          }
+
+          reschedule.clearError()
+          setRescheduleTask(null)
+        }}
+        onSubmit={(dueAt) => {
+          if (!rescheduleTask) {
+            return
+          }
+
+          reschedule.reschedule(rescheduleTask.id, dueAt, () => {
+            setRescheduleTask(null)
+          })
+        }}
       />
     </section>
   )
@@ -43,6 +89,7 @@ function TodayTasksSectionBody({
   isStarting,
   startErrorFor,
   onStart,
+  onReschedule,
 }: {
   businessId: string | null
   tasks: TodayTask[]
@@ -52,6 +99,7 @@ function TodayTasksSectionBody({
   isStarting: (taskId: string) => boolean
   startErrorFor: (taskId: string) => string | null
   onStart: (taskId: string) => void
+  onReschedule: (taskId: string) => void
 }) {
   if (businessId === null) {
     return <p className="text-sm text-muted-foreground">{ru.today.missingBusiness}</p>
@@ -101,6 +149,7 @@ function TodayTasksSectionBody({
           onStart={() => {
             onStart(task.id)
           }}
+          onReschedule={onReschedule}
         />
       ))}
     </div>

@@ -102,7 +102,7 @@ describe('Today task start', () => {
     show([])
   })
 
-  it('enables start only for a TODO task and keeps the other actions disabled', () => {
+  it('enables start for a TODO task, enables reschedule for active tasks, and keeps complete disabled', () => {
     show([todoTask, { ...todoTask, id: 'task_progress', title: 'Уже в работе', status: 'IN_PROGRESS' }])
 
     render(<TodayTasksSection />)
@@ -125,7 +125,7 @@ describe('Today task start', () => {
       expect(
         (within(root).getByRole('button', { name: ru.today.taskActions.reschedule }) as HTMLButtonElement)
           .disabled,
-      ).toBe(true)
+      ).toBe(false)
       expect(
         (within(root).getByRole('button', { name: ru.today.taskActions.complete }) as HTMLButtonElement)
           .disabled,
