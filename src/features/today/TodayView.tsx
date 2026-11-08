@@ -8,21 +8,42 @@ import { ru } from '@/i18n/ru'
 
 export function TodayView() {
   const refetchTasksRef = useRef<(() => void) | null>(null)
+  const refetchAttentionRef = useRef<(() => void) | null>(null)
+  const refetchDeferredRef = useRef<(() => void) | null>(null)
   const registerTasksRefetch = useCallback((refetch: () => void) => {
     refetchTasksRef.current = refetch
+  }, [])
+  const registerAttentionRefetch = useCallback((refetch: () => void) => {
+    refetchAttentionRef.current = refetch
+  }, [])
+  const registerDeferredRefetch = useCallback((refetch: () => void) => {
+    refetchDeferredRef.current = refetch
   }, [])
 
   return (
     <AppShell title={ru.today.title}>
       <div className="space-y-8">
-        <NeedsDecisionSection />
-        <TodayTasksSection onRefetchReady={registerTasksRefetch} />
-        <TodayAttentionSection
+        <NeedsDecisionSection
+          onSnoozed={() => {
+            refetchDeferredRef.current?.()
+          }}
           onTasksRefetch={() => {
             refetchTasksRef.current?.()
           }}
         />
-        <TodayDeferredSection />
+        <TodayTasksSection
+          onRefetchReady={registerTasksRefetch}
+          onCompleted={() => {
+            refetchAttentionRef.current?.()
+          }}
+        />
+        <TodayAttentionSection
+          onRefetchReady={registerAttentionRefetch}
+          onTasksRefetch={() => {
+            refetchTasksRef.current?.()
+          }}
+        />
+        <TodayDeferredSection onRefetchReady={registerDeferredRefetch} />
       </div>
     </AppShell>
   )

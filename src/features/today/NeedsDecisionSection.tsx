@@ -12,7 +12,13 @@ import {
 } from '@/features/today/usePostAcceptContinuation'
 import { ru } from '@/i18n/ru'
 
-export function NeedsDecisionSection() {
+export function NeedsDecisionSection({
+  onSnoozed,
+  onTasksRefetch,
+}: {
+  onSnoozed?: () => void
+  onTasksRefetch?: () => void
+} = {}) {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useNeedsDecisionRecommendations()
   const { continuations, add, remove } = usePostAcceptContinuations(businessId)
@@ -34,6 +40,8 @@ export function NeedsDecisionSection() {
         continuations={continuations}
         onRetry={refetch}
         onActionSuccess={refetch}
+        onSnoozed={onSnoozed}
+        onTaskCreated={onTasksRefetch}
         onAccepted={(input) => {
           const recommendation = data?.recommendations.find(
             (item) => item.id === input.recommendationId,
@@ -89,6 +97,8 @@ function NeedsDecisionSectionBody({
   continuations,
   onRetry,
   onActionSuccess,
+  onSnoozed,
+  onTaskCreated,
   onAccepted,
   onCloseContinuation,
 }: {
@@ -99,6 +109,8 @@ function NeedsDecisionSectionBody({
   continuations: PostAcceptContinuation[]
   onRetry: () => void
   onActionSuccess: () => void
+  onSnoozed?: () => void
+  onTaskCreated?: () => void
   onAccepted: (input: {
     businessId: string
     recommendationId: string
@@ -153,6 +165,8 @@ function NeedsDecisionSectionBody({
           continuation={continuation}
           onAccepted={onAccepted}
           onActionSuccess={onActionSuccess}
+          onSnoozed={onSnoozed}
+          onTaskCreated={onTaskCreated}
           onCloseContinuation={
             continuation
               ? (identity) => onCloseContinuation(recommendation.id, identity)

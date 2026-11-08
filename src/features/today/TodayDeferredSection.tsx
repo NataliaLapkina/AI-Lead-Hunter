@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -7,10 +8,18 @@ import { useTodayDeferred } from '@/features/today/useTodayDeferred'
 import { ru } from '@/i18n/ru'
 import { formatDateTime } from '@/lib/utils'
 
-export function TodayDeferredSection() {
+export function TodayDeferredSection({
+  onRefetchReady,
+}: {
+  onRefetchReady?: (refetch: () => void) => void
+} = {}) {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useTodayDeferred()
   const items = data?.items ?? []
+
+  useEffect(() => {
+    onRefetchReady?.(refetch)
+  }, [onRefetchReady, refetch])
 
   return (
     <section className="space-y-4" aria-labelledby="deferred-heading" aria-busy={isLoading}>

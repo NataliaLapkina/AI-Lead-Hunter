@@ -51,6 +51,8 @@ interface NeedsDecisionCardProps {
     decision: AcceptedDecision
   }) => void
   onActionSuccess: () => void
+  onSnoozed?: () => void
+  onTaskCreated?: () => void
   onCloseContinuation?: (identity: number) => void
 }
 
@@ -59,6 +61,8 @@ export function NeedsDecisionCard({
   continuation,
   onAccepted,
   onActionSuccess,
+  onSnoozed,
+  onTaskCreated,
   onCloseContinuation,
 }: NeedsDecisionCardProps) {
   const whyId = useId()
@@ -133,13 +137,17 @@ export function NeedsDecisionCard({
             decision={continuation.decision}
             continuationIdentity={continuation.identity}
             onClosed={(identity) => onCloseContinuation?.(identity)}
-            onTaskCreated={onActionSuccess}
+            onTaskCreated={() => {
+              onActionSuccess()
+              onTaskCreated?.()
+            }}
           />
         ) : (
           <RecommendationActionBar
             recommendationId={recommendation.id}
             onAccepted={onAccepted}
             onSuccess={onActionSuccess}
+            onSnoozed={onSnoozed}
           />
         )}
       </CardContent>

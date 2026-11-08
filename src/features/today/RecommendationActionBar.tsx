@@ -17,6 +17,7 @@ export function RecommendationActionBar({
   recommendationId,
   onAccepted,
   onSuccess,
+  onSnoozed,
 }: {
   recommendationId: string
   onAccepted: (input: {
@@ -25,6 +26,7 @@ export function RecommendationActionBar({
     decision: AcceptedDecision
   }) => void
   onSuccess: () => void
+  onSnoozed?: () => void
 }) {
   const {
     submitting,
@@ -39,6 +41,7 @@ export function RecommendationActionBar({
     recommendationId,
     onAccepted,
     onSuccess,
+    onSnoozed,
   })
   const [panel, setPanel] = useState<ActionPanel>('idle')
   const [decisionTitle, setDecisionTitle] = useState('')

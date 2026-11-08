@@ -52,6 +52,7 @@ export function createRecommendationActionHandlers(deps: {
     decision: AcceptedDecision
   }) => void
   onSuccess: (businessId: string) => void
+  onSnoozed?: () => void
 }) {
   let inFlight = false
   let requestGeneration = 0
@@ -209,7 +210,7 @@ export function createRecommendationActionHandlers(deps: {
       return { status: 'error', message: ru.today.actionFailed }
     }
 
-    return runRequest(
+    const result = await runRequest(
       businessId,
       (signal) =>
         deps.api.snoozeRecommendation({
@@ -220,6 +221,10 @@ export function createRecommendationActionHandlers(deps: {
         }),
       started,
     )
+    if (result.status === 'success') {
+      deps.onSnoozed?.()
+    }
+    return result
   }
 
   async function modify(decisionTitleInput: unknown): Promise<RecommendationActionAttempt> {
@@ -325,6 +330,7 @@ export function useRecommendationActions(input: {
     decision: AcceptedDecision
   }) => void
   onSuccess: () => void
+  onSnoozed?: () => void
 }) {
   const { businessId } = useCurrentBusiness()
   const { userId } = useCurrentUser()
@@ -335,11 +341,13 @@ export function useRecommendationActions(input: {
   const userIdRef = useRef(userId)
   const onAcceptedRef = useRef(input.onAccepted)
   const onSuccessRef = useRef(input.onSuccess)
+  const onSnoozedRef = useRef(input.onSnoozed)
 
   businessIdRef.current = businessId
   userIdRef.current = userId
   onAcceptedRef.current = input.onAccepted
   onSuccessRef.current = input.onSuccess
+  onSnoozedRef.current = input.onSnoozed
 
   const recommendationIdRef = useRef(input.recommendationId)
   recommendationIdRef.current = input.recommendationId
@@ -361,6 +369,9 @@ export function useRecommendationActions(input: {
       },
       onSuccess: () => {
         onSuccessRef.current()
+      },
+      onSnoozed: () => {
+        onSnoozedRef.current?.()
       },
     }),
   )

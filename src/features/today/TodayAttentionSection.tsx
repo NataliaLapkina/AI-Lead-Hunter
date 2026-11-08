@@ -13,13 +13,19 @@ const ATTENTION_TASK_IDENTITY = 1
 
 export function TodayAttentionSection({
   onTasksRefetch,
+  onRefetchReady,
 }: {
   onTasksRefetch?: () => void
+  onRefetchReady?: (refetch: () => void) => void
 } = {}) {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useTodayAttention()
   const [creatingId, setCreatingId] = useState<string | null>(null)
   const items = data?.items ?? []
+
+  useEffect(() => {
+    onRefetchReady?.(refetch)
+  }, [onRefetchReady, refetch])
 
   useEffect(() => {
     setCreatingId(null)
