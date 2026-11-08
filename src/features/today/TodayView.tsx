@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { NeedsDecisionSection } from '@/features/today/NeedsDecisionSection'
 import { TodayAttentionSection } from '@/features/today/TodayAttentionSection'
+import { TodayDeferredSection } from '@/features/today/TodayDeferredSection'
 import { TodayTasksSection } from '@/features/today/TodayTasksSection'
 import { ru } from '@/i18n/ru'
 
@@ -21,6 +22,7 @@ export function TodayView() {
             refetchTasksRef.current?.()
           }}
         />
+        <TodayDeferredSection />
       </div>
     </AppShell>
   )

@@ -36,6 +36,15 @@ vi.mock('@/features/today/useTodayAttention', () => ({
   }),
 }))
 
+vi.mock('@/features/today/useTodayDeferred', () => ({
+  useTodayDeferred: () => ({
+    data: { items: [] },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}))
+
 describe('TodayView', () => {
   afterEach(() => {
     cleanup()
@@ -47,10 +56,13 @@ describe('TodayView', () => {
     const needsDecision = screen.getByText('Нужно решить')
     const needsToDo = screen.getByRole('heading', { name: ru.today.needsToDo })
     const needsAttention = screen.getByRole('heading', { name: ru.today.needsAttention })
+    const deferred = screen.getByRole('heading', { name: ru.today.deferred })
 
     expect(needsDecision.compareDocumentPosition(needsToDo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(needsToDo.compareDocumentPosition(needsAttention) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(needsAttention.compareDocumentPosition(deferred) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText(ru.today.tasksLoadError)).toBeTruthy()
     expect(screen.getByText(ru.today.emptyNeedsAttention)).toBeTruthy()
+    expect(screen.getByText(ru.today.emptyDeferred)).toBeTruthy()
   })
 })
