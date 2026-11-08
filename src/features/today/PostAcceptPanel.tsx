@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { AcceptedDecision } from '@/domain/decisions/decision'
-import type { CreatedTask, TaskPriority } from '@/domain/tasks/task'
+import type { CreatedTask } from '@/domain/tasks/task'
 import { getTaskDateInputMin, isTodayDueAtAvailable } from '@/domain/tasks/taskDueAt'
+import { CreateTaskFromDecisionForm } from '@/features/today/CreateTaskFromDecisionForm'
 import {
   useCreateTaskFromDecision,
   type CreateTaskAttempt,
@@ -9,15 +10,8 @@ import {
 } from '@/features/today/useCreateTaskFromDecision'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { ru } from '@/i18n/ru'
 import { formatDateTime } from '@/lib/utils'
-
-const PRIORITY_OPTIONS: Array<{ value: TaskPriority; label: string }> = [
-  { value: 'LOW', label: ru.today.actions.priorityLow },
-  { value: 'MEDIUM', label: ru.today.actions.priorityMedium },
-  { value: 'HIGH', label: ru.today.actions.priorityHigh },
-]
 
 export function PostAcceptPanel({
   decision,
@@ -31,15 +25,12 @@ export function PostAcceptPanel({
   onTaskCreated?: () => void
 }) {
   const [phase, setPhase] = useState<'choose' | 'form' | 'remind' | 'created'>('choose')
-  const [title, setTitle] = useState(decision.title)
   const [dueOption, setDueOption] = useState<CreateTaskDueOption | null>(null)
   const [customDate, setCustomDate] = useState('')
-  const [priority, setPriority] = useState<TaskPriority>('MEDIUM')
   const [createdTask, setCreatedTask] = useState<CreatedTask | null>(null)
   const [createdFrom, setCreatedFrom] = useState<'task' | 'reminder' | null>(null)
   const { submitting, actionError, submit, clearActionError } =
     useCreateTaskFromDecision(decision.id, continuationIdentity)
-  const titleId = useId()
   const customDateId = useId()
   const todayAvailable = isTodayDueAtAvailable()
   const onTaskCreatedRef = useRef(onTaskCreated)
@@ -125,8 +116,6 @@ export function PostAcceptPanel({
             size="sm"
             onClick={() => {
               resetBranchDueState()
-              setTitle(decision.title)
-              setPriority('MEDIUM')
               setPhase('form')
             }}
           >
@@ -271,139 +260,24 @@ export function PostAcceptPanel({
     <div className="space-y-3">
       <p className="text-sm font-medium">{ru.today.accepted}</p>
       <p className="text-sm">{decision.title}</p>
-      <div className="space-y-1">
-        <label htmlFor={titleId} className="text-sm text-muted-foreground">
-          {ru.today.taskTitle}
-        </label>
-        <Textarea
-          id={titleId}
-          value={title}
-          disabled={submitting}
-          onChange={(event) => setTitle(event.target.value)}
-          rows={3}
-        />
-      </div>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{ru.today.taskWhen}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={dueOption === 'today' ? 'default' : 'secondary'}
-            disabled={submitting || !todayAvailable}
-            onClick={() => setDueOption('today')}
-          >
-            {ru.today.actions.dueToday}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={dueOption === 'tomorrow' ? 'default' : 'secondary'}
-            disabled={submitting}
-            onClick={() => setDueOption('tomorrow')}
-          >
-            {ru.today.actions.dueTomorrow}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={dueOption === 'custom' ? 'default' : 'secondary'}
-            disabled={submitting}
-            onClick={() => setDueOption('custom')}
-          >
-            {ru.today.actions.duePickDate}
-          </Button>
-        </div>
-        {!todayAvailable ? (
-          <p className="text-xs text-muted-foreground">{ru.today.todayUnavailable}</p>
-        ) : null}
-        {dueOption === 'custom' ? (
-          <label htmlFor={customDateId} className="block space-y-1 text-sm">
-            <span className="text-muted-foreground">{ru.today.actions.duePickDate}</span>
-            <Input
-              id={customDateId}
-              type="date"
-              value={customDate}
-              min={getTaskDateInputMin()}
-              disabled={submitting}
-              onChange={(event) => setCustomDate(event.target.value)}
-            />
-          </label>
-        ) : null}
-      </div>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{ru.today.taskPriorityLabel}</p>
-        <div className="flex flex-wrap gap-2">
-          {PRIORITY_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              type="button"
-              size="sm"
-              variant={priority === option.value ? 'default' : 'secondary'}
-              disabled={submitting}
-              onClick={() => setPriority(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={submitting}
-          onClick={() => {
-            void submit({
-              title,
-              dueOption,
-              customDate,
-              priority,
-            }).then((result) => handleTaskResult(result, 'task'))
-          }}
-        >
-          {ru.today.actions.createTask}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          disabled={submitting}
-          onClick={() => {
-            if (submitting) {
-              return
-            }
+      <CreateTaskFromDecisionForm
+        decisionId={decision.id}
+        continuationIdentity={continuationIdentity}
+        initialTitle={decision.title}
+        onCancel={() => {
+          setPhase('choose')
+        }}
+        onCreated={(task) => {
+          if (!mountedRef.current) {
+            return
+          }
 
-            clearActionError()
-            setPhase('choose')
-          }}
-        >
-          {ru.common.cancel}
-        </Button>
-      </div>
-      {actionError ? (
-        <div className="space-y-2">
-          <p className="text-sm text-destructive" role="alert">
-            {actionError}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={submitting}
-            onClick={() => {
-              void submit({
-                title,
-                dueOption,
-                customDate,
-                priority,
-              }).then((result) => handleTaskResult(result, 'task'))
-            }}
-          >
-            {ru.today.retry}
-          </Button>
-        </div>
-      ) : null}
+          setCreatedFrom('task')
+          setCreatedTask(task)
+          setPhase('created')
+          onTaskCreatedRef.current?.()
+        }}
+      />
     </div>
   )
 }

@@ -14,9 +14,17 @@ import { useStartTodayTask } from '@/features/today/useStartTodayTask'
 import { useTodayTasks } from '@/features/today/useTodayTasks'
 import { ru } from '@/i18n/ru'
 
-export function TodayTasksSection() {
+export function TodayTasksSection({
+  onRefetchReady,
+}: {
+  onRefetchReady?: (refetch: () => void) => void
+} = {}) {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useTodayTasks()
+
+  useEffect(() => {
+    onRefetchReady?.(refetch)
+  }, [onRefetchReady, refetch])
   const start = useStartTodayTask(businessId, refetch)
   const reschedule = useRescheduleTodayTask(businessId, refetch)
   const complete = useCompleteTodayTask(businessId, refetch)

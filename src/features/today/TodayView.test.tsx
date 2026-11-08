@@ -27,6 +27,15 @@ vi.mock('@/features/today/useTodayTasks', () => ({
   useTodayTasks: () => listState.current,
 }))
 
+vi.mock('@/features/today/useTodayAttention', () => ({
+  useTodayAttention: () => ({
+    data: { items: [] },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}))
+
 describe('TodayView', () => {
   afterEach(() => {
     cleanup()
@@ -35,8 +44,13 @@ describe('TodayView', () => {
   it('keeps the needs-decision section when today tasks fail to load', () => {
     render(<TodayView />)
 
-    expect(screen.getByText('Нужно решить')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: ru.today.needsToDo })).toBeTruthy()
+    const needsDecision = screen.getByText('Нужно решить')
+    const needsToDo = screen.getByRole('heading', { name: ru.today.needsToDo })
+    const needsAttention = screen.getByRole('heading', { name: ru.today.needsAttention })
+
+    expect(needsDecision.compareDocumentPosition(needsToDo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(needsToDo.compareDocumentPosition(needsAttention) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText(ru.today.tasksLoadError)).toBeTruthy()
+    expect(screen.getByText(ru.today.emptyNeedsAttention)).toBeTruthy()
   })
 })
