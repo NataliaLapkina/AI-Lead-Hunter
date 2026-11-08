@@ -180,8 +180,7 @@ describe('Today task reschedule', () => {
       expect(
         (within(root).getByRole('button', { name: ru.today.taskActions.complete }) as HTMLButtonElement)
           .disabled,
-      ).toBe(true)
-      expect(within(root).getByText(ru.today.taskActions.unavailable)).toBeTruthy()
+      ).toBe(false)
     }
 
     openReschedule(todoTask.title)
@@ -201,7 +200,7 @@ describe('Today task reschedule', () => {
     expect(startTask).not.toHaveBeenCalled()
   })
 
-  it('keeps start behavior and leaves complete disabled', async () => {
+  it('keeps start behavior and leaves complete available', async () => {
     show([todoTask])
     vi.mocked(startTask).mockResolvedValue({ task: { id: todoTask.id, status: 'IN_PROGRESS' } })
 
@@ -216,7 +215,7 @@ describe('Today task reschedule', () => {
     expect(rescheduleTask).not.toHaveBeenCalled()
     expect(
       (screen.getByRole('button', { name: ru.today.taskActions.complete }) as HTMLButtonElement).disabled,
-    ).toBe(true)
+    ).toBe(false)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 

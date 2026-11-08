@@ -167,8 +167,11 @@ describe('TodayTasksSection', () => {
     const completeButton = screen.getByRole('button', {
       name: ru.today.taskActions.complete,
     }) as HTMLButtonElement
-    expect(completeButton.disabled).toBe(true)
+    expect(completeButton.disabled).toBe(false)
     fireEvent.click(completeButton)
+    expect(screen.getByRole('heading', { name: ru.today.complete.title })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: ru.common.cancel }))
+    expect(screen.queryByRole('dialog')).toBeNull()
 
     const rescheduleButton = screen.getByRole('button', {
       name: ru.today.taskActions.reschedule,
@@ -176,8 +179,7 @@ describe('TodayTasksSection', () => {
     expect(rescheduleButton.disabled).toBe(false)
     fireEvent.click(rescheduleButton)
 
-    expect(screen.getByRole('dialog')).toBeTruthy()
-    expect(screen.getByText(ru.today.taskActions.unavailable)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: ru.today.reschedule.title })).toBeTruthy()
     expect(fetchMock).not.toHaveBeenCalled()
     expect(createTaskFromDecision).not.toHaveBeenCalled()
     expect(screen.queryByText(ru.today.taskCreated)).toBeNull()

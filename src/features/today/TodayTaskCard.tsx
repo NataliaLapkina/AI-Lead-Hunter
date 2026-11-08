@@ -17,15 +17,17 @@ export function TodayTaskCard({
   startError = null,
   onStart,
   onReschedule,
+  onComplete,
 }: {
   task: TodayTask
   starting?: boolean
   startError?: string | null
   onStart?: () => void
   onReschedule?: (taskId: string) => void
+  onComplete?: (taskId: string) => void
 }) {
   const canStart = task.status === 'TODO' && !starting
-  const canReschedule = task.status === 'TODO' || task.status === 'IN_PROGRESS'
+  const canAct = task.status === 'TODO' || task.status === 'IN_PROGRESS'
 
   return (
     <Card className={task.isOverdue ? 'border-destructive/40' : undefined}>
@@ -55,7 +57,6 @@ export function TodayTaskCard({
             {`${ru.today.decisionLabel} ${task.decision.title}`}
           </p>
         ) : null}
-        <p className="text-sm text-muted-foreground">{ru.today.taskActions.unavailable}</p>
         {startError ? (
           <p className="text-sm text-destructive" role="alert">
             {startError}
@@ -76,9 +77,9 @@ export function TodayTaskCard({
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canReschedule}
+            disabled={!canAct}
             onClick={
-              canReschedule
+              canAct
                 ? () => {
                     onReschedule?.(task.id)
                   }
@@ -87,7 +88,19 @@ export function TodayTaskCard({
           >
             {ru.today.taskActions.reschedule}
           </Button>
-          <Button type="button" variant="outline" size="sm" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!canAct}
+            onClick={
+              canAct
+                ? () => {
+                    onComplete?.(task.id)
+                  }
+                : undefined
+            }
+          >
             {ru.today.taskActions.complete}
           </Button>
         </div>

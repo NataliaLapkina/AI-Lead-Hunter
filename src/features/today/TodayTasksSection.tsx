@@ -5,8 +5,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { MissingTimeZoneError } from '@/domain/tasks/browserTimeZone'
 import type { TodayTask } from '@/domain/tasks/todayTask'
 import { useCurrentBusiness } from '@/features/business/CurrentBusinessContext'
+import { CompleteTaskDialog } from '@/features/today/CompleteTaskDialog'
 import { RescheduleTaskDialog } from '@/features/today/RescheduleTaskDialog'
 import { TodayTaskCard } from '@/features/today/TodayTaskCard'
+import { useCompleteTodayTask } from '@/features/today/useCompleteTodayTask'
 import { useRescheduleTodayTask } from '@/features/today/useRescheduleTodayTask'
 import { useStartTodayTask } from '@/features/today/useStartTodayTask'
 import { useTodayTasks } from '@/features/today/useTodayTasks'
@@ -17,11 +19,14 @@ export function TodayTasksSection() {
   const { data, isLoading, error, refetch } = useTodayTasks()
   const start = useStartTodayTask(businessId, refetch)
   const reschedule = useRescheduleTodayTask(businessId, refetch)
+  const complete = useCompleteTodayTask(businessId, refetch)
   const tasks = data?.tasks ?? []
   const [rescheduleTask, setRescheduleTask] = useState<TodayTask | null>(null)
+  const [completeTask, setCompleteTask] = useState<TodayTask | null>(null)
 
   useEffect(() => {
     setRescheduleTask(null)
+    setCompleteTask(null)
   }, [businessId])
 
   function openReschedule(taskId: string) {
@@ -36,6 +41,20 @@ export function TodayTasksSection() {
 
     reschedule.clearError()
     setRescheduleTask(task)
+  }
+
+  function openComplete(taskId: string) {
+    if (complete.pending) {
+      return
+    }
+
+    const task = tasks.find((item) => item.id === taskId)
+    if (!task || (task.status !== 'TODO' && task.status !== 'IN_PROGRESS')) {
+      return
+    }
+
+    complete.clearError()
+    setCompleteTask(task)
   }
 
   return (
@@ -53,6 +72,7 @@ export function TodayTasksSection() {
         startErrorFor={start.errorFor}
         onStart={start.start}
         onReschedule={openReschedule}
+        onComplete={openComplete}
       />
       <RescheduleTaskDialog
         task={rescheduleTask}
@@ -76,6 +96,28 @@ export function TodayTasksSection() {
           })
         }}
       />
+      <CompleteTaskDialog
+        task={completeTask}
+        pending={complete.pending}
+        error={complete.error}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen || complete.pending) {
+            return
+          }
+
+          complete.clearError()
+          setCompleteTask(null)
+        }}
+        onSubmit={(outcome, comment) => {
+          if (!completeTask) {
+            return
+          }
+
+          complete.complete(completeTask.id, outcome, comment, () => {
+            setCompleteTask(null)
+          })
+        }}
+      />
     </section>
   )
 }
@@ -90,6 +132,7 @@ function TodayTasksSectionBody({
   startErrorFor,
   onStart,
   onReschedule,
+  onComplete,
 }: {
   businessId: string | null
   tasks: TodayTask[]
@@ -100,6 +143,7 @@ function TodayTasksSectionBody({
   startErrorFor: (taskId: string) => string | null
   onStart: (taskId: string) => void
   onReschedule: (taskId: string) => void
+  onComplete: (taskId: string) => void
 }) {
   if (businessId === null) {
     return <p className="text-sm text-muted-foreground">{ru.today.missingBusiness}</p>
@@ -150,6 +194,7 @@ function TodayTasksSectionBody({
             onStart(task.id)
           }}
           onReschedule={onReschedule}
+          onComplete={onComplete}
         />
       ))}
     </div>

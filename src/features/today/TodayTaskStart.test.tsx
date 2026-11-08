@@ -102,7 +102,7 @@ describe('Today task start', () => {
     show([])
   })
 
-  it('enables start for a TODO task, enables reschedule for active tasks, and keeps complete disabled', () => {
+  it('enables start for a TODO task and enables reschedule and complete for active tasks', () => {
     show([todoTask, { ...todoTask, id: 'task_progress', title: 'Уже в работе', status: 'IN_PROGRESS' }])
 
     render(<TodayTasksSection />)
@@ -129,9 +129,8 @@ describe('Today task start', () => {
       expect(
         (within(root).getByRole('button', { name: ru.today.taskActions.complete }) as HTMLButtonElement)
           .disabled,
-      ).toBe(true)
+      ).toBe(false)
     }
-    expect(screen.getAllByText(ru.today.taskActions.unavailable).length).toBeGreaterThan(0)
   })
 
   it('posts the current business and task, then refetches without changing status early', async () => {
