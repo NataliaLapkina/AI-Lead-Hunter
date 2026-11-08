@@ -456,6 +456,45 @@ export async function findRecommendationSnoozeContextInBusiness(
   })
 }
 
+export type TodayDeferredRow = {
+  id: string
+  title: string
+  status: RecommendationStatus
+  snoozedUntil: Date
+  companyId: string | null
+  companyName: string | null
+}
+
+export async function findTodayDeferredRecommendations(
+  businessId: string,
+  now: Date,
+  limit: number,
+): Promise<TodayDeferredRow[]> {
+  return prisma.$queryRaw<TodayDeferredRow[]>`
+    SELECT
+      recommendation.id,
+      recommendation.title,
+      recommendation.status,
+      recommendation."snoozedUntil",
+      company.id AS "companyId",
+      company.name AS "companyName"
+    FROM "Recommendation" AS recommendation
+    LEFT JOIN "Company" AS company
+      ON company.id = recommendation."companyId"
+      AND company."businessId" = ${businessId}
+    WHERE
+      recommendation."businessId" = ${businessId}
+      AND recommendation.status IN (
+        CAST(${RecommendationStatus.NEW} AS "RecommendationStatus"),
+        CAST(${RecommendationStatus.VIEWED} AS "RecommendationStatus")
+      )
+      AND recommendation."snoozedUntil" IS NOT NULL
+      AND recommendation."snoozedUntil" > ${now}
+    ORDER BY recommendation."snoozedUntil" ASC, recommendation.id ASC
+    LIMIT ${limit}
+  `
+}
+
 export async function recommendationCompanyBelongsToBusiness(
   businessId: string,
   companyId: string,

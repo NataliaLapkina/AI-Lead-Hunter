@@ -5,6 +5,7 @@ import { registerStartCompanyWorkRoute } from './api/companies/startCompanyWorkR
 import { registerUpdateCompanyAssessmentRoute } from './api/companies/updateCompanyAssessmentRoute.js'
 import { registerAcceptRecommendationRoute } from './api/recommendations/acceptRecommendationRoute.js'
 import { registerListNeedsDecisionRecommendationsRoute } from './api/recommendations/listNeedsDecisionRecommendationsRoute.js'
+import { registerListTodayDeferredRoute } from './api/recommendations/listTodayDeferredRoute.js'
 import { registerModifyRecommendationRoute } from './api/recommendations/modifyRecommendationRoute.js'
 import { registerRejectRecommendationRoute } from './api/recommendations/rejectRecommendationRoute.js'
 import { registerSnoozeRecommendationRoute } from './api/recommendations/snoozeRecommendationRoute.js'
@@ -68,6 +69,7 @@ async function buildServer() {
   await registerGetSearchResultDetailRoute(app, API_PREFIX)
   await registerAcceptRecommendationRoute(app, API_PREFIX)
   await registerListNeedsDecisionRecommendationsRoute(app, API_PREFIX)
+  await registerListTodayDeferredRoute(app, API_PREFIX)
   await registerModifyRecommendationRoute(app, API_PREFIX)
   await registerRejectRecommendationRoute(app, API_PREFIX)
   await registerSnoozeRecommendationRoute(app, API_PREFIX)
