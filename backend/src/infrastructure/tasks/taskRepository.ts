@@ -395,3 +395,99 @@ export async function findOpenTasksDueBefore(
     ]
   })
 }
+
+export type TodayAttentionRow = {
+  id: string
+  title: string
+  completedAt: Date
+  completionOutcome: TaskCompletionOutcome
+  companyId: string | null
+  companyName: string | null
+  decisionId: string | null
+  decisionTitle: string | null
+  decisionStatus: DecisionStatus | null
+}
+
+export async function findTodayAttentionItems(
+  businessId: string,
+  limit: number,
+): Promise<TodayAttentionRow[]> {
+  // One bounded read: NOT EXISTS drops targets that already have an open task,
+  // and the window keeps the earliest FOLLOW_UP per company, otherwise per decision.
+  return prisma.$queryRaw<TodayAttentionRow[]>`
+    SELECT
+      ranked.id,
+      ranked.title,
+      ranked."completedAt",
+      ranked."completionOutcome",
+      ranked."companyId",
+      ranked."companyName",
+      ranked."decisionId",
+      ranked."decisionTitle",
+      ranked."decisionStatus"
+    FROM (
+      SELECT
+        task.id,
+        task.title,
+        task."completedAt",
+        task."completionOutcome",
+        company.id AS "companyId",
+        company.name AS "companyName",
+        decision.id AS "decisionId",
+        decision.title AS "decisionTitle",
+        decision.status AS "decisionStatus",
+        ROW_NUMBER() OVER (
+          PARTITION BY
+            CASE
+              WHEN task."companyId" IS NOT NULL THEN 'company:' || task."companyId"
+              WHEN task."decisionId" IS NOT NULL THEN 'decision:' || task."decisionId"
+              ELSE 'task:' || task.id
+            END
+          ORDER BY task."completedAt" ASC, task.id ASC
+        ) AS row_number
+      FROM "Task" task
+      LEFT JOIN "Company" company
+        ON company.id = task."companyId"
+        AND company."businessId" = task."businessId"
+      LEFT JOIN "Decision" decision
+        ON decision.id = task."decisionId"
+        AND decision."businessId" = task."businessId"
+      WHERE
+        task."businessId" = ${businessId}
+        AND task.status = CAST(${TaskStatus.DONE} AS "TaskStatus")
+        AND task."completionOutcome" = CAST(${TaskCompletionOutcome.FOLLOW_UP} AS "TaskCompletionOutcome")
+        AND task."completedAt" IS NOT NULL
+        AND (
+          task."companyId" IS NULL
+          OR NOT EXISTS (
+            SELECT 1
+            FROM "Task" open_company_task
+            WHERE
+              open_company_task."businessId" = task."businessId"
+              AND open_company_task."companyId" = task."companyId"
+              AND open_company_task.status IN (
+                CAST(${TaskStatus.TODO} AS "TaskStatus"),
+                CAST(${TaskStatus.IN_PROGRESS} AS "TaskStatus")
+              )
+          )
+        )
+        AND (
+          task."decisionId" IS NULL
+          OR NOT EXISTS (
+            SELECT 1
+            FROM "Task" open_decision_task
+            WHERE
+              open_decision_task."businessId" = task."businessId"
+              AND open_decision_task."decisionId" = task."decisionId"
+              AND open_decision_task.status IN (
+                CAST(${TaskStatus.TODO} AS "TaskStatus"),
+                CAST(${TaskStatus.IN_PROGRESS} AS "TaskStatus")
+              )
+          )
+        )
+    ) ranked
+    WHERE ranked.row_number = 1
+    ORDER BY ranked."completedAt" ASC, ranked.id ASC
+    LIMIT ${limit}
+  `
+}

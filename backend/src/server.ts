@@ -10,6 +10,7 @@ import { registerRejectRecommendationRoute } from './api/recommendations/rejectR
 import { registerSnoozeRecommendationRoute } from './api/recommendations/snoozeRecommendationRoute.js'
 import { registerCompleteTaskRoute } from './api/tasks/completeTaskRoute.js'
 import { registerCreateTaskFromDecisionRoute } from './api/tasks/createTaskFromDecisionRoute.js'
+import { registerListTodayAttentionRoute } from './api/tasks/listTodayAttentionRoute.js'
 import { registerListTodayTasksRoute } from './api/tasks/listTodayTasksRoute.js'
 import { registerRescheduleTaskRoute } from './api/tasks/rescheduleTaskRoute.js'
 import { registerStartTaskRoute } from './api/tasks/startTaskRoute.js'
@@ -72,6 +73,7 @@ async function buildServer() {
   await registerSnoozeRecommendationRoute(app, API_PREFIX)
   await registerCreateTaskFromDecisionRoute(app, API_PREFIX)
   await registerListTodayTasksRoute(app, API_PREFIX)
+  await registerListTodayAttentionRoute(app, API_PREFIX)
   await registerStartTaskRoute(app, API_PREFIX)
   await registerRescheduleTaskRoute(app, API_PREFIX)
   await registerCompleteTaskRoute(app, API_PREFIX)
