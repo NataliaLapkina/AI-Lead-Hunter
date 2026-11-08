@@ -413,7 +413,10 @@ model Task {
   assignedToId String?
   createdById  String
 
-  completedAt DateTime?
+  completedAt       DateTime?
+  completionOutcome TaskCompletionOutcome?
+  completionComment String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -875,6 +878,14 @@ enum TaskStatus {
   IN_PROGRESS
   DONE
   CANCELLED
+}
+
+enum TaskCompletionOutcome {
+  CONTACTED
+  NO_RESPONSE
+  FOLLOW_UP
+  DECLINED
+  OTHER
 }
 
 enum InteractionChannel {

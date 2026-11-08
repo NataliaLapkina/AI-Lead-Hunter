@@ -8,6 +8,7 @@ import { registerListNeedsDecisionRecommendationsRoute } from './api/recommendat
 import { registerModifyRecommendationRoute } from './api/recommendations/modifyRecommendationRoute.js'
 import { registerRejectRecommendationRoute } from './api/recommendations/rejectRecommendationRoute.js'
 import { registerSnoozeRecommendationRoute } from './api/recommendations/snoozeRecommendationRoute.js'
+import { registerCompleteTaskRoute } from './api/tasks/completeTaskRoute.js'
 import { registerCreateTaskFromDecisionRoute } from './api/tasks/createTaskFromDecisionRoute.js'
 import { registerListTodayTasksRoute } from './api/tasks/listTodayTasksRoute.js'
 import { registerRescheduleTaskRoute } from './api/tasks/rescheduleTaskRoute.js'
@@ -73,6 +74,7 @@ async function buildServer() {
   await registerListTodayTasksRoute(app, API_PREFIX)
   await registerStartTaskRoute(app, API_PREFIX)
   await registerRescheduleTaskRoute(app, API_PREFIX)
+  await registerCompleteTaskRoute(app, API_PREFIX)
 
   app.setNotFoundHandler(async (_request, reply) => {
     return reply.status(404).send({

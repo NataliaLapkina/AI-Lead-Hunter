@@ -1,5 +1,6 @@
 import {
   DecisionStatus,
+  TaskCompletionOutcome,
   TaskPriority,
   TaskStatus,
   type Prisma,
@@ -257,6 +258,64 @@ export async function tryRescheduleTaskAtomic(
 }
 
 export async function findTaskRescheduleContextInBusiness(
+  businessId: string,
+  taskId: string,
+) {
+  return prisma.task.findFirst({
+    where: {
+      id: taskId,
+      businessId,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  })
+}
+
+export type CompletedTaskRow = {
+  id: string
+  status: TaskStatus
+  completedAt: Date
+  completionOutcome: TaskCompletionOutcome
+  completionComment: string | null
+}
+
+export async function tryCompleteTaskAtomic(
+  businessId: string,
+  taskId: string,
+  completionOutcome: TaskCompletionOutcome,
+  completionComment: string | null,
+): Promise<CompletedTaskRow | null> {
+  // Prisma updateMany cannot RETURNING; use parameterized UPDATE ... RETURNING.
+  // updatedAt is set explicitly: raw SQL bypasses Prisma @updatedAt.
+  const rows = await prisma.$queryRaw<CompletedTaskRow[]>`
+    UPDATE "Task"
+    SET
+      status = CAST(${TaskStatus.DONE} AS "TaskStatus"),
+      "completedAt" = CURRENT_TIMESTAMP,
+      "completionOutcome" = CAST(${completionOutcome} AS "TaskCompletionOutcome"),
+      "completionComment" = ${completionComment},
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE
+      id = ${taskId}
+      AND "businessId" = ${businessId}
+      AND status IN (
+        CAST(${TaskStatus.TODO} AS "TaskStatus"),
+        CAST(${TaskStatus.IN_PROGRESS} AS "TaskStatus")
+      )
+    RETURNING
+      id,
+      status,
+      "completedAt",
+      "completionOutcome",
+      "completionComment"
+  `
+
+  return rows[0] ?? null
+}
+
+export async function findTaskCompleteContextInBusiness(
   businessId: string,
   taskId: string,
 ) {
