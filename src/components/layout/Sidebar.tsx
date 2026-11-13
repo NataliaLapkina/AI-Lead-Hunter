@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
+  RefreshCw,
   Search,
   Users,
   BarChart3,
@@ -17,6 +18,7 @@ import { ru } from '@/i18n/ru'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: ru.nav.dashboard },
+  { to: '/recheck', icon: RefreshCw, label: ru.nav.recheck },
   { to: '/search', icon: Search, label: ru.nav.search },
   { to: '/leads', icon: Users, label: ru.nav.leads },
   { to: '/analytics', icon: BarChart3, label: ru.nav.analytics },
@@ -91,7 +93,7 @@ export function Sidebar() {
 export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
-      <div className="flex items-center justify-around px-2 py-2">
+      <div className="flex items-center justify-around px-1 py-2">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -99,13 +101,13 @@ export function MobileNav() {
             end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-medium transition-colors',
+                'flex flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] font-medium transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground',
               )
             }
           >
             <Icon className="h-5 w-5" />
-            <span>{label}</span>
+            <span className="whitespace-nowrap">{label}</span>
           </NavLink>
         ))}
       </div>

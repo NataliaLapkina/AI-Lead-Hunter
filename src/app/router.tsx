@@ -8,6 +8,7 @@ import { LeadsPage } from '@/pages/LeadsPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { RecheckPage } from '@/pages/RecheckPage'
 
 export const router = createBrowserRouter(
   [
@@ -16,6 +17,7 @@ export const router = createBrowserRouter(
       element: <AppLayout />,
       children: [
         { index: true, element: <DashboardPage /> },
+        { path: 'recheck', element: <RecheckPage /> },
         {
           path: 'search',
           element: <SearchLayout />,

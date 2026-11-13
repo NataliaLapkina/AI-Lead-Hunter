@@ -15,6 +15,7 @@ export const ru = {
   },
   nav: {
     dashboard: 'Главная',
+    recheck: 'Перепроверить',
     search: 'Поиск',
     leads: 'Компании',
     analytics: 'Аналитика',
@@ -603,6 +604,28 @@ export const ru = {
       INTERACTION: 'Взаимодействие',
       SYSTEM: 'Система',
       OTHER: 'Другой источник',
+    },
+  },
+  recheck: {
+    title: 'Перепроверить',
+    loadError: 'Не удалось загрузить список для перепроверки.',
+    retry: 'Повторить',
+    empty: 'Сейчас нет данных, которые нужно перепроверить.',
+    missingBusiness: 'Текущий бизнес не выбран.',
+    withoutCompany: 'Без компании',
+    sourceFallback: 'Источник',
+    openSource: 'Открыть источник',
+    lastChecked: 'Последняя проверка: {when}',
+    obtained: 'Получено: {when}',
+    knowledgeType: {
+      FACT: 'Факт',
+      OBSERVATION: 'Наблюдение',
+      AI_INFERENCE: 'Вывод ИИ',
+      USER_INFO: 'Информация пользователя',
+    },
+    verification: {
+      OUTDATED: 'Устарело',
+      NEEDS_VERIFICATION: 'Требует проверки',
     },
   },
   toast: {
