@@ -9,6 +9,7 @@ import type {
 } from '@/domain/knowledge/knowledgeRecheck'
 import { useCurrentBusiness } from '@/features/business/CurrentBusinessContext'
 import { useKnowledgeRecheck } from '@/features/recheck/useKnowledgeRecheck'
+import { useVerifyKnowledge } from '@/features/recheck/useVerifyKnowledge'
 import {
   getKnowledgeSourceUrl,
   presentText,
@@ -68,6 +69,7 @@ function dateText(item: KnowledgeRecheckItem): string | null {
 export function RecheckView() {
   const { businessId } = useCurrentBusiness()
   const { data, isLoading, error, refetch } = useKnowledgeRecheck()
+  const verification = useVerifyKnowledge(businessId, refetch)
   const items = data?.items ?? []
 
   return (
@@ -78,6 +80,9 @@ export function RecheckView() {
         isLoading={isLoading}
         error={error}
         onRetry={refetch}
+        isVerifying={verification.isPending}
+        verifyError={verification.errorFor}
+        onVerify={verification.verify}
       />
     </section>
   )
@@ -89,12 +94,18 @@ function RecheckViewBody({
   isLoading,
   error,
   onRetry,
+  isVerifying,
+  verifyError,
+  onVerify,
 }: {
   businessId: string | null
   items: KnowledgeRecheckItem[]
   isLoading: boolean
   error: Error | null
   onRetry: () => void
+  isVerifying: (knowledgeId: string) => boolean
+  verifyError: (knowledgeId: string) => string | null
+  onVerify: (knowledgeId: string) => void
 }) {
   if (businessId === null) {
     return <p className="text-sm text-muted-foreground">{ru.recheck.missingBusiness}</p>
@@ -132,14 +143,29 @@ function RecheckViewBody({
     <ul className="space-y-4">
       {items.map((item) => (
         <li key={item.knowledgeId}>
-          <RecheckCard item={item} />
+          <RecheckCard
+            item={item}
+            verifying={isVerifying(item.knowledgeId)}
+            verifyError={verifyError(item.knowledgeId)}
+            onVerify={() => onVerify(item.knowledgeId)}
+          />
         </li>
       ))}
     </ul>
   )
 }
 
-function RecheckCard({ item }: { item: KnowledgeRecheckItem }) {
+function RecheckCard({
+  item,
+  verifying,
+  verifyError,
+  onVerify,
+}: {
+  item: KnowledgeRecheckItem
+  verifying: boolean
+  verifyError: string | null
+  onVerify: () => void
+}) {
   const heading = headingFor(item)
   const source = sourceText(item)
   const safeSourceUrl = getKnowledgeSourceUrl(item)
@@ -171,6 +197,22 @@ function RecheckCard({ item }: { item: KnowledgeRecheckItem }) {
             {ru.recheck.openSource}
           </a>
         ) : null}
+        <p className="text-sm text-muted-foreground">{ru.recheck.confirmHint}</p>
+        {verifyError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {verifyError}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={verifying}
+          aria-busy={verifying}
+          onClick={verifying ? undefined : onVerify}
+        >
+          {verifying ? ru.recheck.confirming : ru.recheck.confirm}
+        </Button>
       </CardContent>
     </Card>
   )

@@ -615,6 +615,14 @@ export const ru = {
     withoutCompany: 'Без компании',
     sourceFallback: 'Источник',
     openSource: 'Открыть источник',
+    confirm: 'Подтвердить актуальность',
+    confirming: 'Подтверждаем…',
+    confirmHint: 'Проверьте сведения и подтвердите, что они всё ещё верны.',
+    confirmError: {
+      notFound: 'Эти сведения уже недоступны.',
+      conflict: 'Эти сведения нельзя подтвердить в текущем состоянии.',
+      failed: 'Не удалось подтвердить актуальность.',
+    },
     lastChecked: 'Последняя проверка: {when}',
     obtained: 'Получено: {when}',
     knowledgeType: {

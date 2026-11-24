@@ -228,7 +228,7 @@ describe('RecheckPage', () => {
     expect(screen.getByText(ru.common.loading)).toBeTruthy()
   })
 
-  it('renders knowledge cards without write actions', async () => {
+  it('renders knowledge cards with the source link and a manual confirmation', async () => {
     const lastCheckedAt = '2024-11-01T12:00:00.000Z'
     const obtainedAt = '2024-02-01T08:30:00.000Z'
     const obtainedOnly = '2025-01-10T09:00:00.000Z'
@@ -319,7 +319,7 @@ describe('RecheckPage', () => {
     expect(unsafeCard.queryByText(/Последняя проверка|Получено/)).toBeNull()
 
     expect(screen.getAllByRole('link')).toHaveLength(1)
-    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getAllByRole('button', { name: ru.recheck.confirm })).toHaveLength(4)
     expect(screen.queryByText('Проверено')).toBeNull()
     expect(screen.queryByText('knowledge_outdated')).toBeNull()
   })
