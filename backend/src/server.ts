@@ -18,6 +18,7 @@ import { registerStartTaskRoute } from './api/tasks/startTaskRoute.js'
 import { registerListSearchResultsRoute } from './api/searches/listSearchResultsRoute.js'
 import { registerGetSearchResultDetailRoute } from './api/searches/getSearchResultDetailRoute.js'
 import { registerListKnowledgeRecheckRoute } from './api/knowledge/listKnowledgeRecheckRoute.js'
+import { registerVerifyKnowledgeRoute } from './api/knowledge/verifyKnowledgeRoute.js'
 import {
   checkDatabaseConnection,
   disconnectPrisma,
@@ -69,6 +70,7 @@ async function buildServer() {
   await registerListSearchResultsRoute(app, API_PREFIX)
   await registerGetSearchResultDetailRoute(app, API_PREFIX)
   await registerListKnowledgeRecheckRoute(app, API_PREFIX)
+  await registerVerifyKnowledgeRoute(app, API_PREFIX)
   await registerAcceptRecommendationRoute(app, API_PREFIX)
   await registerListNeedsDecisionRecommendationsRoute(app, API_PREFIX)
   await registerListTodayDeferredRoute(app, API_PREFIX)
